@@ -1,0 +1,1437 @@
+{
+  "learner_persona": "파이썬을 처음 배우는 초급 학습자. 데코레이터와 재귀를 배운 적이 있지만 짧거나 모호한 질문으로 직전 맥락을 이어 묻는 경우가 많다.",
+  "stm_conversations": [
+    {
+      "session_id": "demo-stm-20260501-loops-conditionals",
+      "recent_topic": "programming:python-loops-conditionals",
+      "messages": [
+        {
+          "id": "demo-stm-20260501-loops-conditionals-000",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260501-loops-conditionals",
+          "role": "user",
+          "content": "for문이랑 if문을 같이 쓰는 게 헷갈려. 리스트에서 짝수만 출력하려면 먼저 반복하고 안에서 조건을 보는 거야?",
+          "timestamp": "2026-05-01T11:00:00+09:00",
+          "turn_index": 0
+        },
+        {
+          "id": "demo-stm-20260501-loops-conditionals-001",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260501-loops-conditionals",
+          "role": "assistant",
+          "content": "맞아. for number in numbers로 하나씩 꺼내고, 반복문 안에서 if number % 2 == 0 조건을 검사하면 짝수일 때만 실행할 수 있어.",
+          "timestamp": "2026-05-01T11:00:34+09:00",
+          "turn_index": 1
+        },
+        {
+          "id": "demo-stm-20260501-loops-conditionals-002",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260501-loops-conditionals",
+          "role": "user",
+          "content": "그러면 if를 for 밖에 쓰면 리스트 전체가 짝수인지 보는 거고, for 안에 쓰면 숫자 하나씩 검사하는 차이야?",
+          "timestamp": "2026-05-01T11:05:10+09:00",
+          "turn_index": 2
+        },
+        {
+          "id": "demo-stm-20260501-loops-conditionals-003",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260501-loops-conditionals",
+          "role": "assistant",
+          "content": "그렇게 이해하면 좋아. 들여쓰기 위치가 기준이야. if가 for 안으로 들여쓰기되면 반복할 때마다 조건을 검사하고, 밖에 있으면 반복과 별개로 한 번 검사해.",
+          "timestamp": "2026-05-01T11:05:44+09:00",
+          "turn_index": 3
+        },
+        {
+          "id": "demo-stm-20260501-loops-conditionals-004",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260501-loops-conditionals",
+          "role": "user",
+          "content": "range(1, 6)을 for에 넣고 3보다 큰 숫자만 모으려면 result 리스트에 append하면 돼?",
+          "timestamp": "2026-05-01T11:12:00+09:00",
+          "turn_index": 4
+        },
+        {
+          "id": "demo-stm-20260501-loops-conditionals-005",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260501-loops-conditionals",
+          "role": "assistant",
+          "content": "응. result = []로 시작하고 for n in range(1, 6): 다음 줄에서 if n > 3: result.append(n)처럼 쓰면 [4, 5]가 모여.",
+          "timestamp": "2026-05-01T11:12:42+09:00",
+          "turn_index": 5
+        },
+        {
+          "id": "demo-stm-20260501-loops-conditionals-006",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260501-loops-conditionals",
+          "role": "user",
+          "content": "elif는 반복문 안에서도 쓸 수 있어? 점수가 90 이상이면 A, 80 이상이면 B를 여러 점수에 적용하고 싶어.",
+          "timestamp": "2026-05-01T11:20:00+09:00",
+          "turn_index": 6
+        },
+        {
+          "id": "demo-stm-20260501-loops-conditionals-007",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260501-loops-conditionals",
+          "role": "assistant",
+          "content": "쓸 수 있어. for score in scores 안에서 if score >= 90, elif score >= 80, else 순서로 쓰면 각 점수마다 등급 하나를 고를 수 있어.",
+          "timestamp": "2026-05-01T11:20:39+09:00",
+          "turn_index": 7
+        },
+        {
+          "id": "demo-stm-20260501-loops-conditionals-008",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260501-loops-conditionals",
+          "role": "user",
+          "content": "if를 두 번 쓰는 것과 if 다음 elif를 쓰는 건 결과가 달라질 수 있는 거지?",
+          "timestamp": "2026-05-01T11:27:00+09:00",
+          "turn_index": 8
+        },
+        {
+          "id": "demo-stm-20260501-loops-conditionals-009",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260501-loops-conditionals",
+          "role": "assistant",
+          "content": "맞아. if를 여러 번 쓰면 조건을 각각 따로 검사해. elif는 앞 조건이 참이면 뒤 조건을 건너뛰니까 등급처럼 한 번만 분류해야 하는 상황에 맞아.",
+          "timestamp": "2026-05-01T11:27:31+09:00",
+          "turn_index": 9
+        },
+        {
+          "id": "demo-stm-20260501-loops-conditionals-010",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260501-loops-conditionals",
+          "role": "user",
+          "content": "while문은 조건이 참인 동안 계속 반복하는 거라고 했는데, for랑 언제 나눠 써?",
+          "timestamp": "2026-05-01T11:35:00+09:00",
+          "turn_index": 10
+        },
+        {
+          "id": "demo-stm-20260501-loops-conditionals-011",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260501-loops-conditionals",
+          "role": "assistant",
+          "content": "반복할 대상이나 횟수가 정해져 있으면 for가 편하고, 사용자가 맞는 값을 입력할 때까지처럼 끝나는 조건이 중요하면 while이 자연스러워.",
+          "timestamp": "2026-05-01T11:35:45+09:00",
+          "turn_index": 11
+        },
+        {
+          "id": "demo-stm-20260501-loops-conditionals-012",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260501-loops-conditionals",
+          "role": "user",
+          "content": "while 안에서 if로 'q'를 입력하면 break 하는 코드는 초보자가 써도 괜찮아?",
+          "timestamp": "2026-05-01T11:43:00+09:00",
+          "turn_index": 12
+        },
+        {
+          "id": "demo-stm-20260501-loops-conditionals-013",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260501-loops-conditionals",
+          "role": "assistant",
+          "content": "괜찮아. while True로 반복하고 입력값이 'q'인지 if로 확인한 뒤 break 하면 종료 조건이 코드에 분명히 보여서 연습하기 좋아.",
+          "timestamp": "2026-05-01T11:43:38+09:00",
+          "turn_index": 13
+        },
+        {
+          "id": "demo-stm-20260501-loops-conditionals-014",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260501-loops-conditionals",
+          "role": "user",
+          "content": "continue는 break랑 다르게 반복을 완전히 끝내지는 않는 거지? 음수 점수만 건너뛰고 싶을 때 쓰면 돼?",
+          "timestamp": "2026-05-01T11:51:00+09:00",
+          "turn_index": 14
+        },
+        {
+          "id": "demo-stm-20260501-loops-conditionals-015",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260501-loops-conditionals",
+          "role": "assistant",
+          "content": "맞아. if score < 0: continue를 쓰면 그 점수만 건너뛰고 다음 반복으로 넘어가. break는 반복문 자체를 종료한다는 점이 달라.",
+          "timestamp": "2026-05-01T11:51:41+09:00",
+          "turn_index": 15
+        },
+        {
+          "id": "demo-stm-20260501-loops-conditionals-016",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260501-loops-conditionals",
+          "role": "user",
+          "content": "중첩 if랑 중첩 for는 아직 복잡해. 들여쓰기가 한 칸 더 들어가면 안쪽 블록이라는 것만 보면 될까?",
+          "timestamp": "2026-05-01T12:00:00+09:00",
+          "turn_index": 16
+        },
+        {
+          "id": "demo-stm-20260501-loops-conditionals-017",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260501-loops-conditionals",
+          "role": "assistant",
+          "content": "우선은 그렇게 보면 돼. 파이썬에서는 들여쓰기가 블록을 정하니까, 안쪽으로 들어갈수록 어떤 반복문이나 조건문에 포함되는지 천천히 확인하면 돼.",
+          "timestamp": "2026-05-01T12:00:39+09:00",
+          "turn_index": 17
+        },
+        {
+          "id": "demo-stm-20260501-loops-conditionals-018",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260501-loops-conditionals",
+          "role": "user",
+          "content": "정리하면 for는 하나씩 꺼내는 반복, if는 조건 검사, elif는 앞 조건이 틀렸을 때 다음 검사, else는 나머지인 거네?",
+          "timestamp": "2026-05-01T12:07:00+09:00",
+          "turn_index": 18
+        },
+        {
+          "id": "demo-stm-20260501-loops-conditionals-019",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260501-loops-conditionals",
+          "role": "assistant",
+          "content": "정확해. 오늘 대화에서는 반복할 대상과 들여쓰기 위치, 그리고 if/elif/else가 한 번만 분류하는 흐름을 구분하는 게 핵심이야.",
+          "timestamp": "2026-05-01T12:07:44+09:00",
+          "turn_index": 19
+        }
+      ]
+    },
+    {
+      "session_id": "demo-stm-20260507-loops",
+      "recent_topic": "programming:python-loops",
+      "messages": [
+        {
+          "id": "demo-stm-20260507-loops-000",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260507-loops",
+          "role": "user",
+          "content": "파이썬 for문에서 range(5)를 쓰면 1부터 5까지 도는 거야?",
+          "timestamp": "2026-05-07T09:00:00+09:00",
+          "turn_index": 0
+        },
+        {
+          "id": "demo-stm-20260507-loops-001",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260507-loops",
+          "role": "assistant",
+          "content": "range(5)는 0, 1, 2, 3, 4를 만들어. 마지막 숫자 5는 포함하지 않아. 1부터 5까지 돌고 싶다면 range(1, 6)을 쓰면 돼.",
+          "timestamp": "2026-05-07T09:00:21+09:00",
+          "turn_index": 1
+        },
+        {
+          "id": "demo-stm-20260507-loops-002",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260507-loops",
+          "role": "user",
+          "content": "그러면 리스트 안의 점수를 하나씩 더할 때는 for score in scores처럼 쓰는 거지?",
+          "timestamp": "2026-05-07T09:03:10+09:00",
+          "turn_index": 2
+        },
+        {
+          "id": "demo-stm-20260507-loops-003",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260507-loops",
+          "role": "assistant",
+          "content": "맞아. scores 리스트의 값을 하나씩 score 변수에 담아 반복해. 합계를 만들 때는 total = 0으로 시작하고 반복 안에서 total += score를 하면 돼.",
+          "timestamp": "2026-05-07T09:03:38+09:00",
+          "turn_index": 3
+        }
+      ]
+    },
+    {
+      "session_id": "demo-stm-20260507-conditionals",
+      "recent_topic": "programming:python-conditionals",
+      "messages": [
+        {
+          "id": "demo-stm-20260507-conditionals-000",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260507-conditionals",
+          "role": "user",
+          "content": "if랑 elif가 헷갈려. 둘 다 조건을 검사하는 거면 그냥 if를 여러 번 쓰면 안 돼?",
+          "timestamp": "2026-05-07T13:30:00+09:00",
+          "turn_index": 0
+        },
+        {
+          "id": "demo-stm-20260507-conditionals-001",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260507-conditionals",
+          "role": "assistant",
+          "content": "if를 여러 번 쓰면 각 조건이 독립적으로 검사돼. elif는 앞 조건이 거짓일 때만 다음 조건을 검사해서, 점수 등급처럼 한 가지 결과만 골라야 할 때 적합해.",
+          "timestamp": "2026-05-07T13:30:32+09:00",
+          "turn_index": 1
+        },
+        {
+          "id": "demo-stm-20260507-conditionals-002",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260507-conditionals",
+          "role": "user",
+          "content": "score가 90 이상이면 A, 80 이상이면 B 같은 건 elif가 맞겠네. else는 아무 조건도 안 맞을 때고?",
+          "timestamp": "2026-05-07T13:32:04+09:00",
+          "turn_index": 2
+        },
+        {
+          "id": "demo-stm-20260507-conditionals-003",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260507-conditionals",
+          "role": "assistant",
+          "content": "정확해. else는 위 조건이 모두 거짓일 때 실행돼. 조건 순서도 중요해서 90 이상을 먼저 검사하고 그다음 80 이상을 검사해야 해.",
+          "timestamp": "2026-05-07T13:32:28+09:00",
+          "turn_index": 3
+        }
+      ]
+    },
+    {
+      "session_id": "demo-stm-20260501-functions-exceptions",
+      "recent_topic": "programming:python-functions-exceptions",
+      "messages": [
+        {
+          "id": "demo-stm-20260501-functions-exceptions-000",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260501-functions-exceptions",
+          "role": "user",
+          "content": "함수에서 parameter랑 argument가 자꾸 섞여. def greet(name)의 name은 뭐야?",
+          "timestamp": "2026-05-01T20:00:00+09:00",
+          "turn_index": 0
+        },
+        {
+          "id": "demo-stm-20260501-functions-exceptions-001",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260501-functions-exceptions",
+          "role": "assistant",
+          "content": "def greet(name)에서 name은 parameter야. 함수를 정의할 때 받을 값을 이름 붙여 둔 자리라고 보면 돼.",
+          "timestamp": "2026-05-01T20:01:10+09:00",
+          "turn_index": 1
+        },
+        {
+          "id": "demo-stm-20260501-functions-exceptions-002",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260501-functions-exceptions",
+          "role": "user",
+          "content": "그러면 greet('민지')에서 '민지'가 argument고, 함수에 실제로 넣는 값인 거지?",
+          "timestamp": "2026-05-01T20:07:00+09:00",
+          "turn_index": 2
+        },
+        {
+          "id": "demo-stm-20260501-functions-exceptions-003",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260501-functions-exceptions",
+          "role": "assistant",
+          "content": "맞아. parameter는 함수 정의의 이름표이고 argument는 호출할 때 전달하는 실제 값이야.",
+          "timestamp": "2026-05-01T20:08:05+09:00",
+          "turn_index": 3
+        },
+        {
+          "id": "demo-stm-20260501-functions-exceptions-004",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260501-functions-exceptions",
+          "role": "user",
+          "content": "return이랑 print도 헷갈려. add 함수 안에서 print(total)을 하면 결과를 돌려주는 거야?",
+          "timestamp": "2026-05-01T20:14:00+09:00",
+          "turn_index": 4
+        },
+        {
+          "id": "demo-stm-20260501-functions-exceptions-005",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260501-functions-exceptions",
+          "role": "assistant",
+          "content": "print는 화면에 보여주는 일이고 return은 값을 호출한 곳으로 돌려주는 일이야. 계산 결과를 다시 쓰려면 return total이 필요해.",
+          "timestamp": "2026-05-01T20:15:15+09:00",
+          "turn_index": 5
+        },
+        {
+          "id": "demo-stm-20260501-functions-exceptions-006",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260501-functions-exceptions",
+          "role": "user",
+          "content": "그럼 result = add(2, 3)처럼 저장하려면 함수 안에 return 5가 있어야 하는 거네?",
+          "timestamp": "2026-05-01T20:21:00+09:00",
+          "turn_index": 6
+        },
+        {
+          "id": "demo-stm-20260501-functions-exceptions-007",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260501-functions-exceptions",
+          "role": "assistant",
+          "content": "정확해. add가 return a + b를 하면 result에는 5가 저장돼. return이 없으면 기본적으로 None이 돌아와.",
+          "timestamp": "2026-05-01T20:22:20+09:00",
+          "turn_index": 7
+        },
+        {
+          "id": "demo-stm-20260501-functions-exceptions-008",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260501-functions-exceptions",
+          "role": "user",
+          "content": "2026-05-01T15:08:00+09:00에 LTM demo-ltm-20260501-loops-conditionals로 저장된 demo-stm-20260501-loops-conditionals 학습에서 반복문 안에 if문으로 음수 점수를 건너뛰는 질문을 했잖아. 함수 안에서도 조건문으로 잘못된 값을 검사하고 바로 return해도 돼?",
+          "timestamp": "2026-05-01T20:31:00+09:00",
+          "turn_index": 8
+        },
+        {
+          "id": "demo-stm-20260501-functions-exceptions-009",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260501-functions-exceptions",
+          "role": "assistant",
+          "content": "가능해. 저장된 LTM demo-ltm-20260501-loops-conditionals를 보면 너가 예전에 반복문 안에서 if로 음수 점수를 건너뛰는 패턴을 썼었지. 그때처럼 함수 안에서도 if score < 0: return None으로 먼저 처리할 수 있어. 이런 return을 조기 반환이라고 불러.",
+          "timestamp": "2026-05-01T20:32:30+09:00",
+          "turn_index": 9
+        },
+        {
+          "id": "demo-stm-20260501-functions-exceptions-010",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260501-functions-exceptions",
+          "role": "user",
+          "content": "input으로 받은 숫자를 int로 바꿀 때 글자를 넣으면 에러가 나는데, try except는 이럴 때 쓰는 거야?",
+          "timestamp": "2026-05-01T20:44:00+09:00",
+          "turn_index": 10
+        },
+        {
+          "id": "demo-stm-20260501-functions-exceptions-011",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260501-functions-exceptions",
+          "role": "assistant",
+          "content": "맞아. int('abc')처럼 변환할 수 없는 값은 ValueError가 나니까 try 안에서 시도하고 except ValueError에서 안내 메시지를 보여줄 수 있어.",
+          "timestamp": "2026-05-01T20:45:20+09:00",
+          "turn_index": 11
+        },
+        {
+          "id": "demo-stm-20260501-functions-exceptions-012",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260501-functions-exceptions",
+          "role": "user",
+          "content": "try 안에는 에러가 날 수도 있는 코드만 넣는 게 좋아? 아니면 함수 전체를 넣어도 돼?",
+          "timestamp": "2026-05-01T20:58:00+09:00",
+          "turn_index": 12
+        },
+        {
+          "id": "demo-stm-20260501-functions-exceptions-013",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260501-functions-exceptions",
+          "role": "assistant",
+          "content": "처음에는 에러가 예상되는 줄만 좁게 넣는 연습이 좋아. 범위가 넓으면 어떤 코드에서 문제가 났는지 보기 어려워져.",
+          "timestamp": "2026-05-01T20:59:40+09:00",
+          "turn_index": 13
+        },
+        {
+          "id": "demo-stm-20260501-functions-exceptions-014",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260501-functions-exceptions",
+          "role": "user",
+          "content": "그럼 except Exception으로 다 잡으면 편하지 않아? 왜 ValueError처럼 구체적으로 써?",
+          "timestamp": "2026-05-01T21:12:00+09:00",
+          "turn_index": 14
+        },
+        {
+          "id": "demo-stm-20260501-functions-exceptions-015",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260501-functions-exceptions",
+          "role": "assistant",
+          "content": "너무 넓게 잡으면 예상하지 못한 버그까지 숨길 수 있어. 숫자 변환 실패처럼 의도한 문제는 ValueError로 좁게 잡는 편이 좋아.",
+          "timestamp": "2026-05-01T21:13:25+09:00",
+          "turn_index": 15
+        },
+        {
+          "id": "demo-stm-20260501-functions-exceptions-016",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260501-functions-exceptions",
+          "role": "user",
+          "content": "숫자 변환 함수를 만들면 def parse_age(text): 안에서 try로 int(text)를 하고 실패하면 None을 return하면 돼?",
+          "timestamp": "2026-05-01T21:29:00+09:00",
+          "turn_index": 16
+        },
+        {
+          "id": "demo-stm-20260501-functions-exceptions-017",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260501-functions-exceptions",
+          "role": "assistant",
+          "content": "응. def parse_age(text): 안에서 try: return int(text), except ValueError: return None처럼 쓰면 호출한 쪽에서 실패 여부를 확인할 수 있어.",
+          "timestamp": "2026-05-01T21:30:30+09:00",
+          "turn_index": 17
+        },
+        {
+          "id": "demo-stm-20260501-functions-exceptions-018",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260501-functions-exceptions",
+          "role": "user",
+          "content": "이제 함수는 입력을 받아 return으로 결과를 주고, 예외처리는 실패할 수 있는 부분을 try except로 감싸는 걸로 정리하면 될까?",
+          "timestamp": "2026-05-01T21:46:00+09:00",
+          "turn_index": 18
+        },
+        {
+          "id": "demo-stm-20260501-functions-exceptions-019",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260501-functions-exceptions",
+          "role": "assistant",
+          "content": "좋은 정리야. 특히 return과 print의 차이, ValueError처럼 구체적인 예외를 잡는 이유를 같이 기억하면 다음 실습에서 바로 적용할 수 있어.",
+          "timestamp": "2026-05-01T21:47:45+09:00",
+          "turn_index": 19
+        }
+      ]
+    },
+    {
+      "session_id": "demo-stm-20260502-modules",
+      "recent_topic": "programming:python-modules",
+      "messages": [
+        {
+          "id": "demo-stm-20260502-modules-000",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260502-modules",
+          "role": "user",
+          "content": "어제 반복문/조건문이랑 함수/예외처리를 배웠는데, 오늘 모듈은 그 함수들을 .py 파일로 나눠 쓰는 거야? 어제 저녁에 return과 print를 헷갈리고 ValueError를 따로 잡는 이유를 물어봤던 계산기 코드도 calculator.py 모듈로 만들 수 있어?",
+          "timestamp": "2026-05-02T13:05:00+09:00",
+          "turn_index": 0
+        },
+        {
+          "id": "demo-stm-20260502-modules-001",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260502-modules",
+          "role": "assistant",
+          "content": "맞아. calculator.py처럼 파이썬 코드가 들어 있는 파일은 모듈로 import해서 쓸 수 있어. 파일 이름 calculator가 모듈 이름이 돼.",
+          "timestamp": "2026-05-02T13:05:32+09:00",
+          "turn_index": 1
+        },
+        {
+          "id": "demo-stm-20260502-modules-002",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260502-modules",
+          "role": "user",
+          "content": "그럼 calculator.py에 add 함수가 있으면 다른 파일에서 import calculator 하고 calculator.add(1, 2)라고 써?",
+          "timestamp": "2026-05-02T13:08:10+09:00",
+          "turn_index": 2
+        },
+        {
+          "id": "demo-stm-20260502-modules-003",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260502-modules",
+          "role": "assistant",
+          "content": "정확해. import calculator는 모듈 전체를 가져오니까 함수 앞에 모듈 이름을 붙여 calculator.add(1, 2)처럼 호출해.",
+          "timestamp": "2026-05-02T13:08:46+09:00",
+          "turn_index": 3
+        },
+        {
+          "id": "demo-stm-20260502-modules-004",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260502-modules",
+          "role": "user",
+          "content": "from calculator import add는 add만 가져오는 거라서 바로 add(1, 2)를 쓰는 거고?",
+          "timestamp": "2026-05-02T13:11:20+09:00",
+          "turn_index": 4
+        },
+        {
+          "id": "demo-stm-20260502-modules-005",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260502-modules",
+          "role": "assistant",
+          "content": "맞아. from calculator import add는 모듈 안의 add 이름만 현재 파일로 가져와. 그래서 calculator.add가 아니라 add로 바로 호출할 수 있어.",
+          "timestamp": "2026-05-02T13:11:55+09:00",
+          "turn_index": 5
+        },
+        {
+          "id": "demo-stm-20260502-modules-006",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260502-modules",
+          "role": "user",
+          "content": "둘 중에는 import calculator가 더 안전해? 이름이 어디서 왔는지 보여서?",
+          "timestamp": "2026-05-02T13:15:00+09:00",
+          "turn_index": 6
+        },
+        {
+          "id": "demo-stm-20260502-modules-007",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260502-modules",
+          "role": "assistant",
+          "content": "초급 단계에서는 import calculator처럼 모듈 이름을 붙이는 방식이 읽기 좋아. add가 어느 파일에서 왔는지 코드에 남기 때문이야.",
+          "timestamp": "2026-05-02T13:15:35+09:00",
+          "turn_index": 7
+        },
+        {
+          "id": "demo-stm-20260502-modules-008",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260502-modules",
+          "role": "user",
+          "content": "random 모듈도 같은 원리야? import random을 하면 random.randint(1, 6)처럼 쓰는 거?",
+          "timestamp": "2026-05-02T13:19:00+09:00",
+          "turn_index": 8
+        },
+        {
+          "id": "demo-stm-20260502-modules-009",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260502-modules",
+          "role": "assistant",
+          "content": "응. random.py라는 표준 라이브러리 모듈 안에 randint 함수가 있어서 import random 뒤에 random.randint(1, 6)으로 호출하는 흐름이야.",
+          "timestamp": "2026-05-02T13:19:38+09:00",
+          "turn_index": 9
+        },
+        {
+          "id": "demo-stm-20260502-modules-010",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260502-modules",
+          "role": "user",
+          "content": "근데 내가 파일 이름을 random.py로 만들면 표준 random이랑 헷갈릴 수 있어?",
+          "timestamp": "2026-05-02T13:23:00+09:00",
+          "turn_index": 10
+        },
+        {
+          "id": "demo-stm-20260502-modules-011",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260502-modules",
+          "role": "assistant",
+          "content": "그럴 수 있어. 현재 폴더의 random.py가 먼저 import되어 표준 random을 가릴 수 있으니, 표준 모듈 이름과 같은 파일명은 피하는 게 좋아.",
+          "timestamp": "2026-05-02T13:23:42+09:00",
+          "turn_index": 11
+        },
+        {
+          "id": "demo-stm-20260502-modules-012",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260502-modules",
+          "role": "user",
+          "content": "모듈을 나누는 이유는 코드가 길어졌을 때 함수들을 주제별 파일로 빼는 거라고 보면 돼?",
+          "timestamp": "2026-05-02T13:27:00+09:00",
+          "turn_index": 12
+        },
+        {
+          "id": "demo-stm-20260502-modules-013",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260502-modules",
+          "role": "assistant",
+          "content": "맞아. 계산 함수는 calculator.py, 문자열 도우미는 text_utils.py처럼 주제별로 나누면 파일이 짧아지고 다시 사용할 함수도 찾기 쉬워져.",
+          "timestamp": "2026-05-02T13:27:40+09:00",
+          "turn_index": 13
+        },
+        {
+          "id": "demo-stm-20260502-modules-014",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260502-modules",
+          "role": "user",
+          "content": "패키지는 모듈 여러 개가 폴더에 모인 거야? __init__.py가 나오니까 갑자기 어려워졌어.",
+          "timestamp": "2026-05-02T13:31:00+09:00",
+          "turn_index": 14
+        },
+        {
+          "id": "demo-stm-20260502-modules-015",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260502-modules",
+          "role": "assistant",
+          "content": "간단히 말하면 패키지는 모듈들을 담는 폴더야. 초급 단계에서는 __init__.py를 그 폴더가 파이썬 패키지로 쓰일 수 있음을 표시하는 파일로 이해하면 충분해.",
+          "timestamp": "2026-05-02T13:31:45+09:00",
+          "turn_index": 15
+        },
+        {
+          "id": "demo-stm-20260502-modules-016",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260502-modules",
+          "role": "user",
+          "content": "그러면 my_tools 폴더 안에 calculator.py가 있으면 from my_tools import calculator처럼 가져올 수 있어?",
+          "timestamp": "2026-05-02T13:35:00+09:00",
+          "turn_index": 16
+        },
+        {
+          "id": "demo-stm-20260502-modules-017",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260502-modules",
+          "role": "assistant",
+          "content": "응. my_tools가 패키지이고 그 안에 calculator.py가 있으면 from my_tools import calculator로 모듈을 가져온 뒤 calculator.add(1, 2)를 쓸 수 있어.",
+          "timestamp": "2026-05-02T13:35:44+09:00",
+          "turn_index": 17
+        },
+        {
+          "id": "demo-stm-20260502-modules-018",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260502-modules",
+          "role": "user",
+          "content": "정리하면 모듈은 파일, import는 그 파일을 가져오는 것, 패키지는 모듈 파일을 묶은 폴더라고 말해도 돼?",
+          "timestamp": "2026-05-02T13:40:00+09:00",
+          "turn_index": 18
+        },
+        {
+          "id": "demo-stm-20260502-modules-019",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260502-modules",
+          "role": "assistant",
+          "content": "좋은 정리야. 오늘은 import calculator와 from calculator import add의 차이, 표준 모듈 이름을 피하는 이유, 패키지가 폴더라는 점까지 기억하면 돼.",
+          "timestamp": "2026-05-02T13:40:50+09:00",
+          "turn_index": 19
+        }
+      ]
+    },
+    {
+      "session_id": "demo-stm-20260504-classes",
+      "recent_topic": "programming:python-classes",
+      "messages": [
+        {
+          "id": "demo-stm-20260504-classes-000",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260504-classes",
+          "role": "user",
+          "content": "오늘은 class가 나왔는데 함수랑 뭐가 다른지 잘 모르겠어. class는 객체를 만드는 설계도라고 보면 돼?",
+          "timestamp": "2026-05-04T19:00:00+09:00",
+          "turn_index": 0
+        },
+        {
+          "id": "demo-stm-20260504-classes-001",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260504-classes",
+          "role": "assistant",
+          "content": "맞아. class는 관련 데이터와 동작을 묶어 객체를 만드는 설계도야. 함수는 하나의 동작에 집중하고, class는 그 동작과 상태를 함께 다룰 때 좋아.",
+          "timestamp": "2026-05-04T19:00:42+09:00",
+          "turn_index": 1
+        },
+        {
+          "id": "demo-stm-20260504-classes-002",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260504-classes",
+          "role": "user",
+          "content": "Student class를 만들면 name이나 score 같은 값이 객체마다 따로 들어가는 거야?",
+          "timestamp": "2026-05-04T19:08:00+09:00",
+          "turn_index": 2
+        },
+        {
+          "id": "demo-stm-20260504-classes-003",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260504-classes",
+          "role": "assistant",
+          "content": "응. student1과 student2를 만들면 각 객체가 자기 name, score를 따로 가져. 그래서 같은 class로 만든 객체라도 저장된 값은 다를 수 있어.",
+          "timestamp": "2026-05-04T19:08:38+09:00",
+          "turn_index": 3
+        },
+        {
+          "id": "demo-stm-20260504-classes-004",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260504-classes",
+          "role": "user",
+          "content": "__init__은 객체가 만들어질 때 자동으로 실행되는 함수라고 했는데, 여기서 self.name = name을 쓰는 이유가 뭐야?",
+          "timestamp": "2026-05-04T19:18:00+09:00",
+          "turn_index": 4
+        },
+        {
+          "id": "demo-stm-20260504-classes-005",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260504-classes",
+          "role": "assistant",
+          "content": "__init__은 초기값을 넣는 메서드야. self.name = name은 전달받은 name을 지금 만들어지는 객체의 name 속성으로 저장한다는 뜻이야.",
+          "timestamp": "2026-05-04T19:18:44+09:00",
+          "turn_index": 5
+        },
+        {
+          "id": "demo-stm-20260504-classes-006",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260504-classes",
+          "role": "user",
+          "content": "그럼 self는 지금 만들어진 객체 자신이라는 뜻이지? 메서드 첫 번째에 꼭 self를 쓰는 게 아직 어색해.",
+          "timestamp": "2026-05-04T19:31:00+09:00",
+          "turn_index": 6
+        },
+        {
+          "id": "demo-stm-20260504-classes-007",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260504-classes",
+          "role": "assistant",
+          "content": "그렇게 이해하면 돼. 파이썬은 객체가 메서드를 호출할 때 그 객체를 첫 번째 인자로 자동 전달해. 그래서 메서드 정의에는 self 자리를 적어 둬야 해.",
+          "timestamp": "2026-05-04T19:31:41+09:00",
+          "turn_index": 7
+        },
+        {
+          "id": "demo-stm-20260504-classes-008",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260504-classes",
+          "role": "user",
+          "content": "메서드는 class 안에 있는 함수라고 보면 돼? def introduce(self): 처럼 쓰고 self.name을 출력하는 거야?",
+          "timestamp": "2026-05-04T19:44:00+09:00",
+          "turn_index": 8
+        },
+        {
+          "id": "demo-stm-20260504-classes-009",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260504-classes",
+          "role": "assistant",
+          "content": "맞아. class 안에 정의된 함수가 메서드야. introduce(self) 안에서 self.name을 쓰면 그 메서드를 호출한 객체의 이름을 읽을 수 있어.",
+          "timestamp": "2026-05-04T19:44:37+09:00",
+          "turn_index": 9
+        },
+        {
+          "id": "demo-stm-20260504-classes-010",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260504-classes",
+          "role": "user",
+          "content": "인스턴스 변수랑 그냥 변수는 뭐가 달라? name만 쓰면 안 되고 self.name을 써야 객체에 남는 거야?",
+          "timestamp": "2026-05-04T20:02:00+09:00",
+          "turn_index": 10
+        },
+        {
+          "id": "demo-stm-20260504-classes-011",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260504-classes",
+          "role": "assistant",
+          "content": "응. name은 그 함수 안에서만 쓰는 지역 변수이고, self.name은 객체에 붙는 인스턴스 변수야. 나중에 다른 메서드에서도 쓰려면 self.name으로 저장해야 해.",
+          "timestamp": "2026-05-04T20:02:46+09:00",
+          "turn_index": 11
+        },
+        {
+          "id": "demo-stm-20260504-classes-012",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260504-classes",
+          "role": "user",
+          "content": "student = Student(\"Mina\", 90) 이렇게 만들면 student가 인스턴스고, Student가 class 이름인 거지?",
+          "timestamp": "2026-05-04T20:18:00+09:00",
+          "turn_index": 12
+        },
+        {
+          "id": "demo-stm-20260504-classes-013",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260504-classes",
+          "role": "assistant",
+          "content": "정확해. Student는 class이고, Student(\"Mina\", 90)으로 만들어진 student가 인스턴스야. 같은 class에서 여러 인스턴스를 만들 수 있어.",
+          "timestamp": "2026-05-04T20:18:35+09:00",
+          "turn_index": 13
+        },
+        {
+          "id": "demo-stm-20260504-classes-014",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260504-classes",
+          "role": "user",
+          "content": "정리하면 class는 설계도, 인스턴스는 실제 객체, __init__은 초기화, self는 그 객체 자신이라고 말하면 될까?",
+          "timestamp": "2026-05-04T20:43:00+09:00",
+          "turn_index": 14
+        },
+        {
+          "id": "demo-stm-20260504-classes-015",
+          "memory_type": "stm",
+          "session_id": "demo-stm-20260504-classes",
+          "role": "assistant",
+          "content": "좋은 정리야. 오늘 class 대화에서는 self와 self.name, __init__, 인스턴스와 class 이름의 차이를 구분하는 것이 핵심이야.",
+          "timestamp": "2026-05-04T20:43:39+09:00",
+          "turn_index": 15
+        }
+      ]
+    }
+  ],
+  "ltm_summaries": [
+    {
+      "id": "demo-ltm-20260501-loops-conditionals",
+      "memory_type": "ltm",
+      "session_id": "demo-stm-20260501-loops-conditionals",
+      "summary": "2026년 5월 1일 11~13시 파이썬 반복문과 조건문 학습에서 학습자는 for로 값을 하나씩 꺼내고 if/elif/else로 조건을 검사하는 흐름, while과 break/continue의 차이, 들여쓰기 위치가 블록을 정한다는 점을 연습했다.",
+      "struggles": [
+        "for문 안에 if 조건문을 배치할 때 들여쓰기 기준으로 실행 범위 구분하기",
+        "if를 여러 번 쓰는 경우와 if/elif/else로 한 가지 결과만 고르는 경우 구분하기",
+        "while 반복에서 break와 continue의 종료 또는 건너뛰기 흐름 구분하기"
+      ],
+      "strengths": [
+        "짝수 필터링과 점수 등급처럼 작은 예제로 반복문과 조건문을 연결해 이해한다",
+        "정리 질문을 통해 for, if, elif, else의 역할을 자기 말로 확인한다"
+      ],
+      "confusions": [
+        "if가 for 안에 있을 때와 밖에 있을 때 검사 대상이 달라지는 이유",
+        "elif가 앞 조건이 틀렸을 때만 검사된다는 흐름",
+        "중첩 for와 중첩 if에서 들여쓰기가 한 단계 더 들어가는 의미"
+      ],
+      "topic_tags": [
+        "programming:python-loops",
+        "programming:python-conditionals",
+        "programming:python-basics"
+      ],
+      "embedding": [
+        1,
+        0,
+        0
+      ],
+      "created_at": "2026-05-01T15:08:00+09:00"
+    },
+    {
+      "id": "demo-ltm-python-decorators-history",
+      "memory_type": "ltm",
+      "session_id": "demo-prior-python-session",
+      "summary": "지난 학습에서 Python decorators와 recursion을 다뤘고, 학습자는 wrapper 구조, 실행 순서, base case, 호출 스택에서 어려움을 보였다.",
+      "struggles": [
+        "decorator wrapper 구조를 원래 함수와 분리해서 이해하기",
+        "decorator 실행 순서와 @wraps가 필요한 이유 구분하기",
+        "recursion base case를 고르고 호출 스택 흐름 추적하기"
+      ],
+      "strengths": [
+        "작은 코드 예제를 보면 질문을 구체화한다",
+        "이전 설명과 새 개념을 연결하려고 시도한다"
+      ],
+      "confusions": [
+        "wrapper 함수가 원래 함수를 감싼다는 표현",
+        "재귀가 언제 멈추는지와 호출 스택이 되돌아오는 순서"
+      ],
+      "topic_tags": [
+        "programming:python-decorators",
+        "programming:recursion"
+      ],
+      "embedding": [
+        0.91,
+        0.22,
+        0.44
+      ],
+      "created_at": "2026-04-30T18:20:00+09:00"
+    },
+    {
+      "id": "demo-ltm-20260501-functions-exceptions",
+      "memory_type": "ltm",
+      "session_id": "demo-stm-20260501-functions-exceptions",
+      "summary": "2026년 5월 1일 20~22시 파이썬 함수와 예외처리 학습에서 학습자는 def로 계산기 함수를 만들고 return과 print의 차이를 구분했으며, int 변환과 나눗셈 입력에서 ValueError와 ZeroDivisionError를 try/except로 처리하는 흐름을 연습했다.",
+      "struggles": [
+        "함수 안에서 print로 보여주는 일과 return으로 값을 돌려주는 일 구분하기",
+        "try 블록의 범위와 except ValueError, except ZeroDivisionError를 나누는 기준 이해하기",
+        "반복문과 조건문으로 입력을 검사한 뒤 함수 호출과 예외처리를 연결하기"
+      ],
+      "strengths": [
+        "계산기처럼 손에 잡히는 예제를 기준으로 함수 매개변수와 return 흐름을 따라간다",
+        "오류 메시지를 읽고 어떤 예외가 발생했는지 질문으로 좁혀간다"
+      ],
+      "confusions": [
+        "return한 값을 다시 변수에 담아야 이후 코드에서 사용할 수 있다는 점",
+        "잘못된 숫자 입력은 ValueError이고 0으로 나누기는 ZeroDivisionError라는 차이",
+        "함수 내부에서 예외를 처리할지 호출하는 쪽에서 처리할지의 책임 위치"
+      ],
+      "topic_tags": [
+        "programming:python-functions",
+        "programming:python-exceptions",
+        "programming:python-basics"
+      ],
+      "embedding": [
+        0,
+        1,
+        0
+      ],
+      "created_at": "2026-05-01T23:08:00+09:00"
+    },
+    {
+      "id": "demo-ltm-20260502-modules",
+      "memory_type": "ltm",
+      "session_id": "demo-stm-20260502-modules",
+      "summary": "2026년 5월 2일 13~14시 파이썬 모듈 학습에서 학습자는 전날 만든 함수와 예외처리 코드를 calculator.py 같은 파일로 나누고, import calculator 또는 from calculator import add로 불러와 재사용하는 흐름을 연습했다.",
+      "struggles": [
+        "모듈 파일 이름, 함수 이름, import 이름이 각각 어떤 대상을 가리키는지 구분하기",
+        "같은 폴더에 있는 .py 파일을 import할 때 실행되는 코드와 재사용되는 함수 구분하기",
+        "전날 배운 함수와 예외처리 코드를 모듈로 분리했을 때 호출 위치 추적하기"
+      ],
+      "strengths": [
+        "이전 계산기 예제를 모듈 파일로 옮기는 방식으로 새 개념을 연결한다",
+        "import 방식이 달라지면 호출 코드가 어떻게 바뀌는지 예제로 확인한다"
+      ],
+      "confusions": [
+        "import calculator 뒤에는 calculator.add()처럼 모듈 이름을 붙여야 한다는 점",
+        "from calculator import add 뒤에는 add()로 바로 호출할 수 있다는 점",
+        "__name__ == '__main__' 블록이 왜 필요한지"
+      ],
+      "topic_tags": [
+        "programming:python-modules",
+        "programming:python-imports",
+        "programming:python-functions"
+      ],
+      "embedding": [
+        0,
+        1,
+        1
+      ],
+      "created_at": "2026-05-02T16:05:00+09:00"
+    },
+    {
+      "id": "demo-ltm-20260504-classes",
+      "memory_type": "ltm",
+      "session_id": "demo-stm-20260504-classes",
+      "summary": "2026년 5월 4일 20~21시 파이썬 class 학습에서 학습자는 Student class를 예로 __init__이 인스턴스 초기값을 넣는 메서드이고 self가 현재 객체 자신을 가리킨다는 점을 연습했다.",
+      "struggles": [
+        "class 이름과 인스턴스 변수 이름을 구분하기",
+        "self.name처럼 객체에 저장되는 속성과 지역 변수 name의 차이 이해하기",
+        "__init__이 객체를 만들 때 자동으로 호출되는 초기화 메서드라는 점 연결하기"
+      ],
+      "strengths": [
+        "설계도와 실제 객체 비유로 class와 인스턴스 차이를 설명할 수 있다",
+        "Student(\"Mina\", 90) 같은 생성 예제를 보면 어떤 값이 속성에 들어가는지 따라간다"
+      ],
+      "confusions": [
+        "메서드 정의 첫 번째 매개변수 self를 직접 넘기지 않는 이유",
+        "같은 class에서 만든 여러 인스턴스가 각자 다른 속성 값을 갖는 이유",
+        "__init__과 일반 메서드의 호출 시점 차이"
+      ],
+      "topic_tags": [
+        "programming:python-classes",
+        "programming:python-objects",
+        "programming:python-basics"
+      ],
+      "embedding": [
+        1,
+        1,
+        0
+      ],
+      "created_at": "2026-05-04T23:44:00+09:00"
+    },
+    {
+      "id": "demo-ltm-sql-join-history",
+      "memory_type": "ltm",
+      "session_id": "demo-sql-join-session",
+      "summary": "SQLite와 SQL JOIN 학습에서 학습자는 users 테이블과 orders 테이블을 연결해 읽는 예제를 연습했고, INNER JOIN과 LEFT JOIN의 결과 행 차이를 헷갈려했다.",
+      "struggles": [
+        "INNER JOIN은 양쪽 테이블에 매칭되는 행만 보여준다는 점 이해하기",
+        "LEFT JOIN은 왼쪽 테이블의 행을 유지하고 매칭이 없으면 NULL이 나온다는 점 이해하기",
+        "ON 조건으로 두 테이블의 키를 연결하는 흐름 추적하기"
+      ],
+      "strengths": [
+        "users와 orders처럼 구체적인 테이블 예시가 있으면 행 결합을 추론한다"
+      ],
+      "confusions": [
+        "JOIN을 왜 쓰는지와 WHERE로 필터링하는 것의 차이",
+        "LEFT JOIN 결과에서 주문이 없는 사용자 행이 남는 이유"
+      ],
+      "topic_tags": [
+        "web_app:sql-join",
+        "web_app:sqlite-schema"
+      ],
+      "embedding": [
+        0.15,
+        0.25,
+        0.95
+      ],
+      "created_at": "2026-04-29T21:10:00+09:00"
+    }
+  ],
+  "episodic_memories": [
+    {
+      "episodic_id": "demo-episode-python-decorators",
+      "memory_type": "episodic",
+      "memory_item_type": "learning_event",
+      "topic": "programming:python-decorators",
+      "topic_tags": [
+        "programming:python-decorators"
+      ],
+      "strengths": [
+        "간단한 함수 예제를 기반으로 설명하면 잘 따라온다"
+      ],
+      "weaknesses": [
+        "wrapper 함수가 원래 함수를 감싼다는 구조를 헷갈려한다",
+        "decorator 적용 시점과 함수 호출 시 실행 순서를 혼동한다",
+        "@wraps가 원래 함수 메타데이터를 보존한다는 점을 자주 놓친다"
+      ],
+      "questions": [
+        "데코레이터에서 wrapper 함수가 정확히 뭐야?",
+        "왜 @wraps를 붙여야 해?",
+        "방금 얘기하던걸 조금 더 자세하게 다시 설명해줘."
+      ],
+      "source_session_ids": [
+        "demo-prior-python-session"
+      ],
+      "source_message_ids": [
+        "demo-prior-python-session-decorators-000",
+        "demo-prior-python-session-decorators-001"
+      ],
+      "source_turn_indices": [
+        0,
+        1
+      ],
+      "source_message_timestamps": [
+        "2026-04-30T17:40:00+09:00",
+        "2026-04-30T17:43:00+09:00"
+      ],
+      "topic_embedding": [
+        0.91,
+        0.22,
+        0.44
+      ],
+      "last_updated": "2026-05-01T03:00:00+09:00"
+    },
+    {
+      "episodic_id": "demo-episode-recursion",
+      "memory_type": "episodic",
+      "memory_item_type": "learning_event",
+      "topic": "programming:recursion",
+      "topic_tags": [
+        "programming:recursion"
+      ],
+      "strengths": [
+        "팩토리얼처럼 작은 예제에서는 반복 흐름을 설명할 수 있다"
+      ],
+      "weaknesses": [
+        "base case를 빠뜨리거나 너무 늦게 배치한다",
+        "호출 스택이 쌓였다가 되돌아오는 순서를 어려워한다"
+      ],
+      "questions": [
+        "재귀는 언제 멈춰?",
+        "base case가 없으면 왜 문제가 돼?"
+      ],
+      "source_session_ids": [
+        "demo-prior-python-session"
+      ],
+      "source_message_ids": [
+        "demo-prior-python-session-recursion-000",
+        "demo-prior-python-session-recursion-001"
+      ],
+      "source_turn_indices": [
+        2,
+        3
+      ],
+      "source_message_timestamps": [
+        "2026-04-30T18:00:00+09:00",
+        "2026-04-30T18:05:00+09:00"
+      ],
+      "topic_embedding": [
+        0.74,
+        0.18,
+        0.68
+      ],
+      "last_updated": "2026-05-01T03:00:00+09:00"
+    },
+    {
+      "episodic_id": "demo-episode-sql-join",
+      "memory_type": "episodic",
+      "memory_item_type": "learning_event",
+      "topic": "web_app:sql-join",
+      "topic_tags": [
+        "web_app:sql-join",
+        "web_app:sqlite-schema"
+      ],
+      "strengths": [
+        "테이블 예시를 보면 행이 어떻게 합쳐지는지 추론한다"
+      ],
+      "weaknesses": [
+        "INNER JOIN과 LEFT JOIN의 결과 행 차이를 헷갈려한다",
+        "LEFT JOIN에서 매칭되지 않은 오른쪽 테이블 값이 NULL로 남는 이유를 어려워한다",
+        "ON 조건이 두 테이블의 키를 연결한다는 점을 놓친다"
+      ],
+      "questions": [
+        "SQLite에서 JOIN은 왜 쓰는 거야?",
+        "LEFT JOIN이랑 INNER JOIN은 뭐가 달라?"
+      ],
+      "source_session_ids": [
+        "demo-sql-join-session"
+      ],
+      "source_message_ids": [
+        "demo-sql-join-session-000",
+        "demo-sql-join-session-001"
+      ],
+      "source_turn_indices": [
+        0,
+        1
+      ],
+      "source_message_timestamps": [
+        "2026-04-29T20:20:00+09:00",
+        "2026-04-29T20:26:00+09:00"
+      ],
+      "topic_embedding": [
+        0.15,
+        0.25,
+        0.95
+      ],
+      "last_updated": "2026-04-30T03:00:00+09:00"
+    },
+    {
+      "episodic_id": "demo-conversation-python-decorators",
+      "memory_type": "episodic",
+      "memory_item_type": "conversation_episode",
+      "topic": "general:python-decorators-conversation",
+      "topic_tags": [
+        "programming:python-decorators",
+        "general:conversation"
+      ],
+      "strengths": [
+        "직전 설명을 이어서 다시 묻는 방식으로 모르는 지점을 좁힌다"
+      ],
+      "weaknesses": [
+        "짧은 후속 질문만으로는 wrapper와 원래 함수의 관계가 다시 흐려진다"
+      ],
+      "questions": [
+        "방금 얘기하던걸 조금 더 자세하게 다시 설명해줘."
+      ],
+      "source_session_ids": [
+        "demo-current-session"
+      ],
+      "source_message_ids": [
+        "demo-current-session-000"
+      ],
+      "source_turn_indices": [
+        0
+      ],
+      "source_message_timestamps": [
+        "2026-05-07T16:00:00+09:00"
+      ],
+      "topic_embedding": [
+        0.91,
+        0.3,
+        0.4
+      ],
+      "last_updated": "2026-05-08T03:00:00+09:00"
+    },
+    {
+      "episodic_id": "demo-conversation-python-modules-prior-reference",
+      "memory_type": "episodic",
+      "memory_item_type": "conversation_episode",
+      "topic": "general:python-modules-prior-memory-reference",
+      "topic_tags": [
+        "programming:python-modules",
+        "programming:python-functions",
+        "programming:python-exceptions",
+        "general:memory-reference"
+      ],
+      "strengths": [
+        "전날 배운 반복문, 조건문, 함수, 예외처리를 새 모듈 학습과 연결해 질문한다"
+      ],
+      "weaknesses": [
+        "return과 print의 역할 차이를 모듈 파일로 나눴을 때 다시 확인해야 한다",
+        "ValueError처럼 구체적인 예외를 잡는 이유를 이전 계산기 예제와 연결해 복습한다"
+      ],
+      "questions": [
+        "어제 반복문/조건문이랑 함수/예외처리를 배웠는데, 오늘 모듈은 그 함수들을 .py 파일로 나눠 쓰는 거야? 어제 저녁에 return과 print를 헷갈리고 ValueError를 따로 잡는 이유를 물어봤던 계산기 코드도 calculator.py 모듈로 만들 수 있어?"
+      ],
+      "source_session_ids": [
+        "demo-stm-20260502-modules"
+      ],
+      "source_message_ids": [
+        "demo-stm-20260502-modules-000"
+      ],
+      "source_turn_indices": [
+        0
+      ],
+      "source_message_timestamps": [
+        "2026-05-02T13:05:00+09:00"
+      ],
+      "topic_embedding": [
+        0,
+        1,
+        1
+      ],
+      "last_updated": "2026-05-03T03:00:00+09:00"
+    },
+    {
+      "episodic_id": "demo-episode-20260501-loops-conditionals",
+      "memory_type": "episodic",
+      "memory_item_type": "learning_event",
+      "topic": "programming:python-loops-conditionals",
+      "topic_tags": [
+        "programming:python-loops",
+        "programming:python-conditionals",
+        "programming:python-basics"
+      ],
+      "strengths": [
+        "짝수 필터링과 점수 등급처럼 작은 예제로 반복문과 조건문을 연결해 이해한다",
+        "for, if, elif, else의 역할을 자기 말로 정리하며 학습을 마무리한다"
+      ],
+      "weaknesses": [
+        "반복문 안에 조건문을 배치할 때 들여쓰기 기준으로 실행 범위를 구분하는 데 시간이 필요하다",
+        "if를 여러 번 쓰는 경우와 if/elif/else로 한 가지 조건만 고르는 경우를 헷갈려한다",
+        "while 반복에서 break와 continue의 흐름 차이를 예제로 반복 확인해야 한다"
+      ],
+      "questions": [
+        "for문이랑 if문을 같이 쓰는 게 헷갈려. 리스트에서 짝수만 출력하려면 먼저 반복하고 안에서 조건을 보는 거야?",
+        "elif는 반복문 안에서도 쓸 수 있어? 점수가 90 이상이면 A, 80 이상이면 B를 여러 점수에 적용하고 싶어.",
+        "정리하면 for는 하나씩 꺼내는 반복, if는 조건 검사, elif는 앞 조건이 틀렸을 때 다음 검사, else는 나머지인 거네?"
+      ],
+      "source_session_ids": [
+        "demo-stm-20260501-loops-conditionals"
+      ],
+      "source_message_ids": [
+        "demo-stm-20260501-loops-conditionals-000",
+        "demo-stm-20260501-loops-conditionals-006",
+        "demo-stm-20260501-loops-conditionals-010",
+        "demo-stm-20260501-loops-conditionals-014",
+        "demo-stm-20260501-loops-conditionals-018"
+      ],
+      "source_turn_indices": [
+        0,
+        6,
+        10,
+        14,
+        18
+      ],
+      "source_message_timestamps": [
+        "2026-05-01T11:00:00+09:00",
+        "2026-05-01T11:20:00+09:00",
+        "2026-05-01T11:35:00+09:00",
+        "2026-05-01T11:51:00+09:00",
+        "2026-05-01T12:07:00+09:00"
+      ],
+      "topic_embedding": [
+        1,
+        0,
+        0
+      ],
+      "last_updated": "2026-05-02T03:00:00+09:00"
+    },
+    {
+      "episodic_id": "demo-episode-20260501-functions-exceptions",
+      "memory_type": "episodic",
+      "memory_item_type": "learning_event",
+      "topic": "programming:python-functions-exceptions",
+      "topic_tags": [
+        "programming:python-functions",
+        "programming:python-exceptions",
+        "programming:python-basics"
+      ],
+      "strengths": [
+        "계산기 예제를 기준으로 parameter, argument, return 흐름을 구체적으로 따라간다",
+        "오류 메시지를 ValueError와 ZeroDivisionError 같은 구체적인 예외 이름으로 좁혀 질문한다"
+      ],
+      "weaknesses": [
+        "함수 안에서 print로 보여주는 일과 return으로 값을 돌려주는 일을 혼동한다",
+        "try 블록의 범위와 except ValueError처럼 구체적인 예외를 나누는 이유를 어려워한다",
+        "이전 반복문과 조건문 입력 검사 흐름을 함수 호출 및 예외처리 책임 위치와 연결해야 한다"
+      ],
+      "questions": [
+        "함수에서 parameter랑 argument가 자꾸 섞여. def greet(name)의 name은 뭐야?",
+        "return이랑 print도 헷갈려. add 함수 안에서 print(total)을 하면 결과를 돌려주는 거야?",
+        "input으로 받은 숫자를 int로 바꿀 때 글자를 넣으면 에러가 나는데, try except는 이럴 때 쓰는 거야?",
+        "이제 함수는 입력을 받아 return으로 결과를 주고, 예외처리는 실패할 수 있는 부분을 try except로 감싸는 걸로 정리하면 될까?"
+      ],
+      "source_session_ids": [
+        "demo-stm-20260501-functions-exceptions"
+      ],
+      "source_message_ids": [
+        "demo-stm-20260501-functions-exceptions-000",
+        "demo-stm-20260501-functions-exceptions-004",
+        "demo-stm-20260501-functions-exceptions-010",
+        "demo-stm-20260501-functions-exceptions-014",
+        "demo-stm-20260501-functions-exceptions-018"
+      ],
+      "source_turn_indices": [
+        0,
+        4,
+        10,
+        14,
+        18
+      ],
+      "source_message_timestamps": [
+        "2026-05-01T20:00:00+09:00",
+        "2026-05-01T20:14:00+09:00",
+        "2026-05-01T20:44:00+09:00",
+        "2026-05-01T21:12:00+09:00",
+        "2026-05-01T21:46:00+09:00"
+      ],
+      "topic_embedding": [
+        0,
+        1,
+        0
+      ],
+      "last_updated": "2026-05-02T03:00:00+09:00"
+    },
+    {
+      "episodic_id": "demo-episode-20260502-modules",
+      "memory_type": "episodic",
+      "memory_item_type": "learning_event",
+      "topic": "programming:python-modules",
+      "topic_tags": [
+        "programming:python-modules",
+        "programming:python-imports",
+        "programming:python-functions"
+      ],
+      "strengths": [
+        "전날 계산기 함수와 예외처리 코드를 calculator.py 모듈로 분리하는 방식으로 새 개념을 연결한다",
+        "import calculator와 from calculator import add의 호출 형태 차이를 예제로 확인한다"
+      ],
+      "weaknesses": [
+        "모듈 파일 이름, 함수 이름, import 이름이 각각 어떤 대상을 가리키는지 구분해야 한다",
+        "같은 폴더의 .py 파일을 import할 때 실행되는 코드와 재사용되는 함수의 차이를 어려워한다",
+        "패키지가 모듈 여러 개를 묶은 폴더이고 __init__.py가 등장하는 이유를 아직 낯설어한다"
+      ],
+      "questions": [
+        "어제 반복문/조건문이랑 함수/예외처리를 배웠는데, 오늘 모듈은 그 함수들을 .py 파일로 나눠 쓰는 거야? 어제 저녁에 return과 print를 헷갈리고 ValueError를 따로 잡는 이유를 물어봤던 계산기 코드도 calculator.py 모듈로 만들 수 있어?",
+        "그럼 calculator.py에 add 함수가 있으면 다른 파일에서 import calculator 하고 calculator.add(1, 2)라고 써?",
+        "random 모듈도 같은 원리야? import random을 하면 random.randint(1, 6)처럼 쓰는 거?",
+        "정리하면 모듈은 파일, import는 그 파일을 가져오는 것, 패키지는 모듈 파일을 묶은 폴더라고 말해도 돼?"
+      ],
+      "source_session_ids": [
+        "demo-stm-20260502-modules"
+      ],
+      "source_message_ids": [
+        "demo-stm-20260502-modules-000",
+        "demo-stm-20260502-modules-002",
+        "demo-stm-20260502-modules-008",
+        "demo-stm-20260502-modules-014",
+        "demo-stm-20260502-modules-018"
+      ],
+      "source_turn_indices": [
+        0,
+        2,
+        8,
+        14,
+        18
+      ],
+      "source_message_timestamps": [
+        "2026-05-02T13:05:00+09:00",
+        "2026-05-02T13:08:10+09:00",
+        "2026-05-02T13:19:00+09:00",
+        "2026-05-02T13:31:00+09:00",
+        "2026-05-02T13:40:00+09:00"
+      ],
+      "topic_embedding": [
+        0,
+        1,
+        1
+      ],
+      "last_updated": "2026-05-03T03:00:00+09:00"
+    },
+    {
+      "episodic_id": "demo-episode-20260504-classes",
+      "memory_type": "episodic",
+      "memory_item_type": "learning_event",
+      "topic": "programming:python-classes",
+      "topic_tags": [
+        "programming:python-classes",
+        "programming:python-objects",
+        "programming:python-basics"
+      ],
+      "strengths": [
+        "설계도와 실제 객체 비유로 class와 인스턴스 차이를 설명할 수 있다",
+        "Student(\"Mina\", 90) 같은 생성 예제를 보면 어떤 값이 속성에 들어가는지 따라간다"
+      ],
+      "weaknesses": [
+        "class 이름과 인스턴스 변수 이름을 구분하는 데 시간이 필요하다",
+        "self.name처럼 객체에 저장되는 속성과 지역 변수 name의 차이를 어려워한다",
+        "__init__이 객체 생성 시 자동 호출되는 초기화 메서드라는 점과 일반 메서드 호출 시점을 구분해야 한다"
+      ],
+      "questions": [
+        "오늘은 class가 나왔는데 함수랑 뭐가 다른지 잘 모르겠어. class는 객체를 만드는 설계도라고 보면 돼?",
+        "__init__은 객체가 만들어질 때 자동으로 실행되는 함수라고 했는데, 여기서 self.name = name을 쓰는 이유가 뭐야?",
+        "그럼 self는 지금 만들어진 객체 자신이라는 뜻이지? 메서드 첫 번째에 꼭 self를 쓰는 게 아직 어색해.",
+        "정리하면 class는 설계도, 인스턴스는 실제 객체, __init__은 초기화, self는 그 객체 자신이라고 말하면 될까?"
+      ],
+      "source_session_ids": [
+        "demo-stm-20260504-classes"
+      ],
+      "source_message_ids": [
+        "demo-stm-20260504-classes-000",
+        "demo-stm-20260504-classes-004",
+        "demo-stm-20260504-classes-006",
+        "demo-stm-20260504-classes-010",
+        "demo-stm-20260504-classes-014"
+      ],
+      "source_turn_indices": [
+        0,
+        4,
+        6,
+        10,
+        14
+      ],
+      "source_message_timestamps": [
+        "2026-05-04T19:00:00+09:00",
+        "2026-05-04T19:18:00+09:00",
+        "2026-05-04T19:31:00+09:00",
+        "2026-05-04T20:02:00+09:00",
+        "2026-05-04T20:43:00+09:00"
+      ],
+      "topic_embedding": [
+        1,
+        1,
+        0
+      ],
+      "last_updated": "2026-05-05T03:00:00+09:00"
+    }
+  ],
+  "demo_questions": [
+    "방금 얘기하던걸 조금 더 자세하게 다시 설명해줘.",
+    "저번에 내가 뭘 어려워했었지?",
+    "이게 뭐야?"
+  ],
+  "expected_memory_sources": {
+    "방금 얘기하던걸 조금 더 자세하게 다시 설명해줘.": [
+      "STM",
+      "Episodic"
+    ],
+    "저번에 내가 뭘 어려워했었지?": [
+      "LTM",
+      "Episodic"
+    ],
+    "이게 뭐야?": [
+      "STM",
+      "LTM",
+      "Episodic"
+    ]
+  },
+  "demo_database_paths": {
+    "sqlite_candidates": [
+      "data/demo.sqlite3",
+      "data/chatbot.db"
+    ],
+    "chroma": "data/chroma"
+  },
+  "conversion_trigger": false
+}
