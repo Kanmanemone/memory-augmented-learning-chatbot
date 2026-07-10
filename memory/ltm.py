@@ -15,11 +15,18 @@ LTM stores session-level summaries with learning analytics:
 
 import sqlite3
 import json
+import sys
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable, Optional
+
+try:
+    __import__("pysqlite3")
+    sys.modules["sqlite3"] = sys.modules.pop("pysqlite3")
+except ImportError:
+    pass
 
 import chromadb
 from chromadb.config import Settings
