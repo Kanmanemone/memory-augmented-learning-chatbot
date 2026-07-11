@@ -51,6 +51,7 @@
 - 완전 로컬 저장(SQLite + Chroma 파일 기반) — 원격 DB 없음.
 - Gemini API 네트워크 연결이 필요하다(응답 생성 1회 + topic tagging 1회 + 세션 종료 시 요약/Episodic 변환 최대 2회, 턴당 최대 2회·세션 종료 시 추가 2회 호출).
 - 무인 배치/스케줄러는 없다 — 모든 승격(LTM/Episodic)은 세션 종료 이벤트에서 동기적으로 일어난다. `memory/demo_conversion.py`에 유휴시간/일 단위 배치 승격 함수가 존재하지만 살아있는 `Chatbot` 흐름과는 분리돼 있다(아래 "MVP 제외 사항" 참고).
+- Gemini 호출(응답 생성/topic tagging/요약/Episodic 변환) 어디에도 타임아웃이나 재시도 정책이 없다 — 네트워크가 느리거나 rate limit에 걸리면 그대로 오래 걸리거나 예외가 전파된다(상세는 `docs/ADR.md` "결정 대기 중" 참고).
 
 ## MVP 제외 사항
 - 멀티유저 지원 (계정 구분, 사용자별 데이터 분리)
@@ -58,9 +59,11 @@
 - 실제 임베딩 API 연동 (지금은 결정적(deterministic) fallback 벡터를 쓰고 있고, 실 임베딩 도입은 아직 미결정 — [[project-memory-augmented-chatbot-refactor]] 참고. 서로 다른 3곳에서 차원조차 다른 fallback이 쓰이고 있어(`memory/consolidation.py` 3차원, `memory/demo_conversion.py` 3차원이지만 다른 축, `chatbot.py` 384차원) 검색 결과가 애초에 신뢰할 수 없는 상태다 — 상세는 `docs/ARCHITECTURE.md`, `docs/ADR.md` 참고)
 - 유휴시간/일 단위 배치 승격 스케줄러 (`promote_stm_to_ltm_if_idle` 등 — 제품에 남길지 여부 미결정)
 - 세션 자동 종료(최대 턴 수/비활성 타임아웃) — 기능은 구현돼 있으나 미연결
-- GDG 워크숍 데모 재현을 위한 하드코딩 로직 (진행 중인 정리 대상 — 특정 문자열을 감지해 정해진 답변으로 강제 치환/삽입하는 5개 가드 함수와, 검색 정확도를 좌우하는 고정 키워드→축 매핑 fake 임베딩이 `chatbot.py`에 아직 남아있다. 상세는 `docs/ADR.md` "발견된 규칙 위반" 참고)
+- GDG 워크숍 데모 재현을 위한 하드코딩 로직 (진행 중인 정리 대상 — 단순히 정해진 답변으로 치환하는 5개 가드 함수뿐 아니라, "모호한 후속 질문에서 참조 대상을 복구한다"는 이름의 컨텍스트 파이프라인(referent 추출·context recovery·STM insufficiency trigger) 자체가 `memory/demo_fixture.py`에 코드화된 정확히 하나의 데모 시나리오—파이썬 데코레이터/재귀를 배우는 초급 학습자—에 맞춰 튜닝돼 있다. 다른 주제로는 이 파이프라인이 사실상 작동하지 않는다. 검색 정확도를 좌우하는 고정 키워드→축 매핑 fake 임베딩도 마찬가지. 상세는 `docs/ARCHITECTURE.md` "컨텍스트 구성 파이프라인", `docs/ADR.md` "발견된 규칙 위반" 참고)
 
 ## 인터페이스
 - 지금은 GUI/웹 화면이 없는 프로젝트라 "디자인" 대신 인터페이스 형태를 적는다.
-- CLI: `python chatbot.py` 실행 시 터미널에서 대화하는 REPL.
+- CLI: `python chatbot.py` 실행 시 터미널에서 대화하는 REPL. 실행 전 `GEMINI_API_KEY`를 환경변수 또는 `~/.env`/`./.env`(`GEMINI_API_KEY=...` 한 줄) 중 하나에 설정해야 한다 — 없어도 실행은 되지만 첫 Gemini 호출에서 실패한다(위 "에러/엣지 케이스" 참고).
 - 라이브러리: `from chatbot import Chatbot`으로 다른 Python 코드에서 직접 사용. `Chatbot`은 컨텍스트 매니저(`with Chatbot(...) as bot:`)를 지원하며, `__exit__`에서 `end_session()` → `close()` 순으로 자동 정리된다.
+  - `chat(user_message) -> str`: 응답 문자열만 반환하는 기본 API.
+  - `chat_with_memory_trace(user_message) -> dict`: `{reply, memory_sources, memory_trace}`를 반환하는 확장 API — 이번 응답이 STM/LTM/Episodic 중 어떤 항목에 근거했는지(source, score, metadata) 사후 조회할 수 있다. 디버깅/관측성 목적.

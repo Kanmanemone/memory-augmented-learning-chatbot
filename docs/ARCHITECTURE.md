@@ -82,6 +82,28 @@ Chroma/임베딩을 직접 다루지 않는 순수 유틸리티. `extract_keywor
 | `SessionManager.handle_input(text, turn_count=None, inactive_seconds=None) -> bool` | 종료 판정(`should_end_session`) 후 자동 종료 |
 | `should_end_session(...)` | 우선순위: 명시적 exit 명령 > `max_turns` 도달 > `inactivity_timeout_seconds` 초과. **`chatbot.py`는 `SessionEndCriteria`를 넘기지 않아 실제로는 명시적 exit 명령만 작동한다** |
 
+## 설정 (Configuration)
+환경변수/설정 파일은 아래 항목뿐이며, 전용 config 모듈 없이 `chatbot.py` 상수와 함수로 흩어져 있다.
+
+- **`GEMINI_API_KEY` 해석 순서** (`_read_gemini_api_key`, `chatbot.py:944-968`): ① 환경변수 `GEMINI_API_KEY` → ② `~/.env`(`GEMINI_ENV_PATH = Path.home() / ".env"`, `chatbot.py:176`) → ③ 현재 작업 디렉터리의 `./.env`. 셋 다 없으면 `genai.Client(api_key=None)`로 클라이언트가 만들어지고, **첫 Gemini 호출이 일어나야 실패가 드러난다**(사전 검증 없음, PRD "에러/엣지 케이스" 참고).
+- **모델**: 응답 생성 `gemini-2.5-flash`(`DEFAULT_CHATBOT_RESPONSE_MODEL`, `max_output_tokens=1024`, `chatbot.py:1021-1039` — temperature 등은 API 기본값을 그대로 씀), topic tagging `gemini-2.5-flash`(`tagger.py`), 세션 요약/Episodic 변환 `gemini-2.5-pro`(`memory/consolidation.py`).
+- **타임아웃/재시도 없음**: 세 Gemini 호출 지점(응답 생성, topic tagging, consolidation) 어디에도 요청 타임아웃이나 재시도/backoff 로직이 없다 — 네트워크 지연이나 429(rate limit)가 나면 그대로 예외가 전파되거나(응답 생성, 요약) 무기한 대기한다.
+- **DB/Chroma 경로**: `DATA_DIR = <repo>/data`, `resolve_default_db_path`/`resolve_default_chroma_path`(`chatbot.py:77-101`)가 `DEMO_DB_PATH`(`data/demo.sqlite3`) 존재 여부로 데모 DB 또는 `FALLBACK_DB_PATH`(`data/chatbot.db`)를 선택한다.
+
+## 컨텍스트 구성 파이프라인
+`chat()`이 매 turn 시스템 컨텍스트를 조립할 때 거치는 하위 파이프라인이다. 이 중 상당수가 GDG 데모의 특정 시나리오(파이썬 데코레이터/재귀를 배우는 초급 학습자, `memory/demo_fixture.py`의 `DEMO_LEARNER_PERSONA`)에 맞춰 튜닝돼 있어, 일반화된 기능처럼 보이지만 실제로는 그 시나리오 밖에서 의도대로 동작한다는 보장이 없다. `[규칙 위반]` 표시가 붙은 항목은 `docs/ADR.md`의 "발견된 규칙 위반"에서 상세히 다룬다.
+
+| 함수 | 역할 | 비고 |
+|---|---|---|
+| `extract_referent_candidates` (`chatbot.py:422-518`) | 짧고 모호한 후속 질문("이게 뭐야?")의 참조 대상을 현재 topic tag + 최근 STM 메시지에서 추출 | 매칭/우선순위 로직(`_candidate_topic_matches_context`, `_referent_candidate_specificity`, `chatbot.py:546-564`)이 `programming:python-decorators`/`programming:python` 토픽 태그를 명시적으로 특별 취급한다 — 다른 토픽에는 이 우선순위 로직이 적용되지 않는다. `[규칙 위반]` |
+| `is_context_recovery_utterance` / `build_context_recovery_context` (`chatbot.py:704-732`) | 위 참조 대상 복구가 필요한 발화인지 판정하고, LLM에게 "STM에서 참조 대상을 복구하라"고 지시하는 컨텍스트 블록 생성 | 트리거가 `CONTEXT_RECOVERY_UTTERANCES`(`chatbot.py:250-255`)라는 정확히 두 개의 한국어 문자열에만 반응한다 — "모호한 발화 일반"을 탐지하는 게 아니라 그 두 문장에만 동작한다. `[규칙 위반]` |
+| `build_stm_insufficiency_trigger` / `build_stm_insufficiency_context` (`chatbot.py:735-783`) | context-recovery 발화인데 확신 있는 referent candidate가 없으면, LLM에게 "LTM/Episodic까지 참고하라"는 힌트 블록 생성 | 위 두 항목에 종속적 — 트리거 자체가 안 걸리면 이 로직도 실행되지 않는다 |
+| `_detect_repeat_for_generation` / `build_repeat_detection_context` (`chatbot.py:1552-1591`, `785-798`) | 현재 질문을 Episodic에서 검색된 과거 topic/질문과 비교(임계값 **0.86**, `episodic_schema.py`의 `find_repeated_episodic_record`와 동일 상수)해 "예전에 비슷한 걸 물어봤다"는 메타데이터를 LLM에 제공 | 특정 토픽 하드코딩 없이 일반적으로 동작 — 파이프라인 중 유일하게 데모 시나리오에 종속되지 않은 부분 |
+| `build_integrated_memory_context` / `build_memory_source_trace` (`chatbot.py:801-905`) | STM/LTM/Episodic 검색 결과를 `merge_memory_search_results`로 관련도순 병합해 LLM에 하나의 통합 뷰로 제공 + `chat_with_memory_trace()`(`chatbot.py:1273-1289`)를 통해 호출자가 "이 답변이 어떤 메모리에 근거했는지" 사후 조회 가능 | 관측성(observability) 목적의 일반 기능 — `chat()`은 문자열만 반환하는 호환 API이고, `chat_with_memory_trace()`가 `{reply, memory_sources, memory_trace}`를 반환하는 확장 API다 |
+| 5개 `_ensure_*` 가드 (`chatbot.py:1593-1860`) | 위 컨텍스트를 참고해 생성된 LLM 응답이 특정 조건을 만족 못 하면 고정 문장을 덧붙이거나 응답 전체를 대체 | 전부 데모 전용 하드코딩. `[규칙 위반]` — 상세는 `docs/ADR.md` |
+
+**요지**: referent 추출·context-recovery·STM-insufficiency 세 항목은 겉보기엔 "모호한 대화를 다루는 일반 메모리 시스템"처럼 설계돼 있지만, 실제로는 `memory/demo_fixture.py`에 코드화된 정확히 하나의 데모 대화(데코레이터/wrapper/재귀)를 재현하기 위해 튜닝돼 있다. 다른 주제로 실사용할 경우 이 세 항목은 사실상 동작하지 않거나(트리거가 안 걸림) 의도와 다르게 동작할 수 있다.
+
 ## 데이터 흐름
 
 ### ① 대화 중 (매 turn) — `Chatbot.chat()`, `chatbot.py:1107-1271`
