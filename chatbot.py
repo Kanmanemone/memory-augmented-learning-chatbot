@@ -55,7 +55,6 @@ from memory.retrieval import (
     build_ltm_retrieval_input,
     merge_memory_search_results,
 )
-from memory.demo_fixture import DEMO_LEARNER_PERSONA
 from memory.ltm import LTM_COLLECTION_NAME
 
 try:
@@ -267,43 +266,6 @@ class DemoDatabaseError(RuntimeError):
 # DB helpers
 # ---------------------------------------------------------------------------
 
-DDL_LEARNER_PERSONA = """
-CREATE TABLE IF NOT EXISTS learner_persona (
-    id          TEXT PRIMARY KEY,
-    description TEXT NOT NULL
-);
-"""
-
-
-def init_demo_learner_persona(conn: sqlite3.Connection) -> None:
-    """Ensure the packaged hands-on learner persona exists exactly once."""
-    conn.executescript(DDL_LEARNER_PERSONA)
-    conn.execute(
-        """
-        INSERT INTO learner_persona (id, description)
-        VALUES (?, ?)
-        ON CONFLICT(id) DO UPDATE SET description = excluded.description
-        """,
-        ("demo-learner", DEMO_LEARNER_PERSONA),
-    )
-    conn.commit()
-
-
-def load_demo_learner_persona(conn: sqlite3.Connection) -> dict[str, str]:
-    """Load the packaged hands-on learner persona from SQLite."""
-    row = conn.execute(
-        """
-        SELECT id, description
-        FROM learner_persona
-        WHERE id = ?
-        """,
-        ("demo-learner",),
-    ).fetchone()
-    if row is None:
-        raise LookupError("Demo learner persona is not loaded")
-    return {"id": row[0], "description": row[1]}
-
-
 def _validate_demo_db_path(db_path: Path, *, require_existing: bool) -> None:
     """Validate the SQLite DB path before opening it."""
     if db_path.exists() and not db_path.is_file():
@@ -347,7 +309,6 @@ def _open_db(
 
         create_ltm_table(conn)
         create_episodic_table(db_path)
-        init_demo_learner_persona(conn)
         return conn
     except DemoDatabaseError:
         raise

@@ -25,7 +25,7 @@ notebooks/                              # 원본 GDG 워크숍 핸즈온 노트�
 ```
 
 ## 패턴
-- 클래스는 얇게: `Chatbot`은 진입점 역할만 하고, 실제 로직은 `memory/*.py`와 `episodic_schema.py`의 모듈 함수들에 위임한다. **단, `chatbot.py`에는 이 원칙을 어기는 예외가 하나 있다** — `learner_persona` 테이블(`DDL_LEARNER_PERSONA`, `init_demo_learner_persona`, `load_demo_learner_persona`, `chatbot.py:262-304`)은 `memory/*.py`를 거치지 않고 `chatbot.py`가 직접 `conn.executescript`/`conn.execute`로 SQL을 짠다. `[규칙 위반]`
+- 클래스는 얇게: `Chatbot`은 진입점 역할만 하고, 실제 로직은 `memory/*.py`와 `episodic_schema.py`의 모듈 함수들에 위임한다. (한때 `learner_persona` 테이블에 대해 `chatbot.py`가 `memory/*.py`를 거치지 않고 직접 SQL을 짜는 예외가 있었으나, 그 값을 읽어가는 곳이 전체 코드베이스에 없는 죽은 코드였음을 확인하고 통째로 삭제했다 — `docs/ADR.md` "발견된 규칙 위반 > 위반 1" 참고.)
 - 저장소는 이중화: 구조화된 필드(요약, 태그, 이력)는 SQLite에, 검색용 벡터는 Chroma에 저장한다.
 - Best-effort fallback: LLM 호출(topic tagging, 요약, 임베딩 등)이 실패하거나 없을 때는 예외를 던지는 대신 deterministic fallback으로 대체해 대화 흐름이 끊기지 않게 한다 — 단, 이 원칙이 지켜지지 않는 지점이 있다(아래 "에러 처리 전략" 표 참고).
 - 커밋 전략: 각 쓰기 함수가 완료 즉시 개별 `conn.commit()`을 호출한다(단일 원자적 트랜잭션으로 묶이지 않음). 크래시 안전성은 확보되지만(부분 쓰기가 남지 않음), 여러 단계로 구성된 승격 파이프라인(LTM 저장 → Episodic upsert)에서는 중간 실패 시 정합성이 깨질 수 있다(아래 "알려진 정합성 리스크" 참고).
@@ -100,9 +100,9 @@ Chroma/임베딩을 직접 다루지 않는 순수 유틸리티. `extract_keywor
 | `build_stm_insufficiency_trigger` / `build_stm_insufficiency_context` (`chatbot.py:735-783`) | context-recovery 발화인데 확신 있는 referent candidate가 없으면, LLM에게 "LTM/Episodic까지 참고하라"는 힌트 블록 생성 | 위 두 항목에 종속적 — 트리거 자체가 안 걸리면 이 로직도 실행되지 않는다 |
 | `_detect_repeat_for_generation` / `build_repeat_detection_context` (`chatbot.py:1552-1591`, `785-798`) | 현재 질문을 Episodic에서 검색된 과거 topic/질문과 비교(임계값 **0.86**, `episodic_schema.py`의 `find_repeated_episodic_record`와 동일 상수)해 "예전에 비슷한 걸 물어봤다"는 메타데이터를 LLM에 제공 | 특정 토픽 하드코딩 없이 일반적으로 동작 — 파이프라인 중 유일하게 데모 시나리오에 종속되지 않은 부분 |
 | `build_integrated_memory_context` / `build_memory_source_trace` (`chatbot.py:801-905`) | STM/LTM/Episodic 검색 결과를 `merge_memory_search_results`로 관련도순 병합해 LLM에 하나의 통합 뷰로 제공 + `chat_with_memory_trace()`(`chatbot.py:1273-1289`)를 통해 호출자가 "이 답변이 어떤 메모리에 근거했는지" 사후 조회 가능 | 관측성(observability) 목적의 일반 기능 — `chat()`은 문자열만 반환하는 호환 API이고, `chat_with_memory_trace()`가 `{reply, memory_sources, memory_trace}`를 반환하는 확장 API다 |
-| 5개 `_ensure_*` 가드 (`chatbot.py:1593-1860`) | 위 컨텍스트를 참고해 생성된 LLM 응답이 특정 조건을 만족 못 하면 고정 문장을 덧붙이거나 응답 전체를 대체 | 전부 데모 전용 하드코딩. `[규칙 위반]` — 상세는 `docs/ADR.md` |
+| 5개 `_ensure_*` 가드 (`chatbot.py:1593-1860`) | 위 컨텍스트를 참고해 생성된 LLM 응답이 특정 조건을 만족 못 하면 고정 문장을 덧붙이거나 응답 전체를 대체 | 전부 `[규칙 위반]`이지만 위험도가 다르다 — `_ensure_episodic_context_reflected`/`_ensure_prior_struggle_context_reflected` 2개는 게이팅이 일반 키워드/유사도 판정이라 **실사용 중에도 실제로 발동**(ADR "Tier A"), 나머지 3개(`_ensure_decorator_wrapper_context_reflected`, `_ensure_resolved_context_recovery_answers_directly`, `_ensure_explicit_ltm_reference_reflected`)는 정확한 데모 문자열/리터럴에만 반응해 실사용에서는 사실상 비활성(ADR "Tier B") — 상세는 `docs/ADR.md` |
 
-**요지**: referent 추출·context-recovery·STM-insufficiency 세 항목은 겉보기엔 "모호한 대화를 다루는 일반 메모리 시스템"처럼 설계돼 있지만, 실제로는 `memory/demo_fixture.py`에 코드화된 정확히 하나의 데모 대화(데코레이터/wrapper/재귀)를 재현하기 위해 튜닝돼 있다. 다른 주제로 실사용할 경우 이 세 항목은 사실상 동작하지 않거나(트리거가 안 걸림) 의도와 다르게 동작할 수 있다.
+**요지**: referent 추출·context-recovery·STM-insufficiency 세 항목은 겉보기엔 "모호한 대화를 다루는 일반 메모리 시스템"처럼 설계돼 있지만, 실제로는 `memory/demo_fixture.py`에 코드화된 정확히 하나의 데모 대화(데코레이터/wrapper/재귀)를 재현하기 위해 튜닝돼 있다. 다른 주제로 실사용할 경우 이 세 항목은 사실상 동작하지 않거나(트리거가 안 걸림) 의도와 다르게 동작할 수 있다. 단, 정리 우선순위를 정할 때는 "데모 종속 여부"와 "실사용 중 실제 발동 여부"를 구분해야 한다 — `_ensure_*` 가드 중 2개(Tier A)는 데모와 무관하게 지금도 실사용자의 답변에 영향을 준다. 상세는 `docs/ADR.md`의 "발견된 규칙 위반 > 위반 2" 참고.
 
 ## 데이터 흐름
 
