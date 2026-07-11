@@ -1,7 +1,6 @@
 # Environment and secrets
 .env
 .env.*
-!.env.example
 
 # Python cache and local test artifacts
 __pycache__/
