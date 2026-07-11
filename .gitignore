@@ -33,8 +33,6 @@ Thumbs.db
 
 # Local agent/session state
 .claude/settings.local.json
-.codex/
-.agents/
 
 # Runtime SQLite databases
 *.db
@@ -63,9 +61,6 @@ data/generated_memory_epi.json
 # OUROBOROS generated outputs
 *.yaml
 OUROBOROS.md
-
-# Test artifacts
-tests/
 
 # Unnecessary files
 notebooks/memory_hands_on_notebook.ipynb
