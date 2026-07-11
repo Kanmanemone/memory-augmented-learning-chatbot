@@ -29,6 +29,14 @@
 
 **트레이드오프**: 구문 오류만 잡고 실제 동작 회귀는 못 잡는다. pytest 등 테스트 도구가 정해지면 이 자리를 교체해야 한다.
 
+### ADR-004: 하네스 자체 테스트(`scripts/test_execute.py`)는 pytest에 고정
+
+**결정**: `requirements.txt`에 `pytest==9.1.1`을 추가했다. `scripts/test_execute.py`(execute.py 리팩터링 안전망)가 이미 `import pytest`를 전제로 작성돼 있었는데, pytest가 어디에도 선언돼 있지 않아 실제로는 실행 불가능한 상태였다(`ModuleNotFoundError`).
+
+**이유**: 하네스(`scripts/execute.py`)는 CLAUDE.md에 명시된 대로 챗봇 로직과 무관한 별도 메타 도구다. 이 도구의 자체 회귀 테스트를 돌릴 수 있어야 하네스 코드를 안전하게 고칠 수 있는데, 그 최소 전제조차 깨져 있었다.
+
+**범위**: 이 결정은 하네스 자체 테스트에만 적용된다. 챗봇 본체(`tests/`)의 lint/test 툴체인 선택은 여전히 아래 "결정 대기 중"의 별도 사안이다.
+
 ---
 
 ## 결정 대기 중
@@ -37,4 +45,5 @@
 
 - **유휴시간(3시간)/매일 03시 배치 승격을 제품에 남길지**: `memory/demo_conversion.py`의 `promote_stm_to_ltm_if_idle`, `promote_ltm_to_episodic_daily`는 현재 실제 챗봇 흐름(`consolidate_session`)과 별개로 존재하고 스케줄러도 없다. 유지하려면 실제 스케줄러 연결이 필요하고, 안 쓸 거면 통째로 삭제 대상.
 - **임베딩 전략**: 지금은 서로 다른 3곳(consolidation.py 3차원, demo_conversion.py 자체 방식, chatbot.py 384차원)에 호환되지 않는 deterministic fallback이 흩어져 있다. 실제 Gemini 임베딩 API를 붙일지, 일단 하나의 fallback으로 통일만 할지 결정 필요.
-- **Python lint/test 툴체인**: pytest만 쓸지, ruff 등 lint를 더할지 아직 미정. 하네스 Stop 훅(ADR-003)이 이 결정을 기다리고 있다.
+- **Python lint/test 툴체인 (챗봇 본체)**: `tests/`가 비어있는 채로 pytest만 쓸지, ruff 등 lint를 더할지 아직 미정. 하네스 Stop 훅(ADR-003)이 이 결정을 기다리고 있다. (하네스 자체 테스트의 pytest 채택은 ADR-004로 별도 결정됨.)
+- **하네스가 아직 실전 투입된 적 없음**: `phases/` 디렉터리 자체가 존재하지 않는다 — `scripts/execute.py`, `.claude/commands/harness.md`, `scripts/test_execute.py`는 갖춰졌지만 실제 task/step으로 end-to-end 실행된 적이 없다. `python3 scripts/execute.py {task-name}` 커맨드(CLAUDE.md)는 `phases/{task-name}/index.json`이 있어야 동작하므로, 첫 실사용 시 `phases/` 스캐폴딩부터 만들어야 한다.
