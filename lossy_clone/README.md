@@ -14,4 +14,15 @@
 
 ## 실행 방법
 
-추후 채워짐 (`Chatbot` 클래스가 아직 없습니다).
+`GEMINI_API_KEY` 환경변수가 설정되어 있어야 실제 응답을 받을 수 있습니다.
+
+```python
+from lossy_clone.chatbot import Chatbot
+
+bot = Chatbot()
+
+print(bot.chat("Can you explain Python decorators?"))
+print(bot.chat("I am confused about functools.wraps."))
+```
+
+`llm_client`를 주입하면 다른 LLM 연동으로 교체하거나(예: `GeminiLLMClient`가 아닌 다른 `LLMClient` 구현체), 테스트에서는 `FakeLLMClient`로 네트워크 없이 검증할 수 있습니다.
