@@ -37,7 +37,10 @@
     {
       "step": 4,
       "name": "stm",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-07-13T12:36:15+0900",
+      "completed_at": "2026-07-13T12:36:15+0900",
+      "summary": "lossy_clone/memory/stm.py 추가: stm_messages 테이블(id/session_id/role/content/timestamp/turn_index), init_stm(멱등)/add_message(세션별 순차 turn_index, role 검증)/get_recent_messages(limit, 대화 순서). DB 경로는 호출자(Connection) 책임으로 이 모듈은 경로를 하드코딩하지 않음."
     },
     {
       "step": 5,
