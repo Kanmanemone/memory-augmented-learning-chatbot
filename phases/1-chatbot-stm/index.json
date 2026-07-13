@@ -13,7 +13,10 @@
     {
       "step": 1,
       "name": "import-guard",
-      "status": "pending"
+      "status": "completed",
+      "started_at": "2026-07-13T12:32:21+0900",
+      "completed_at": "2026-07-13T12:32:21+0900",
+      "summary": "lossy_clone/tests/conftest.py에 pytest_collection_modifyitems 훅 추가: sys.modules의 'chatbot'/'memory'가 lossy_clone/ 밖 경로면 RuntimeError. test_import_guard.py로 위반/정상/noop 케이스 검증."
     },
     {
       "step": 2,
