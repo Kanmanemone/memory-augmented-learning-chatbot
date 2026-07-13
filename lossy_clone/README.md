@@ -16,6 +16,14 @@
 
 `GEMINI_API_KEY` 환경변수가 설정되어 있어야 실제 응답을 받을 수 있습니다.
 
+가장 간단한 실행 방법은 **저장소 루트에서** 아래처럼 대화형으로 실행하는 것입니다 (`exit`/`quit`로 종료):
+
+```bash
+python -m lossy_clone
+```
+
+코드에서 직접 쓰려면:
+
 ```python
 from lossy_clone.chatbot import Chatbot
 
@@ -26,3 +34,5 @@ print(bot.chat("I am confused about functools.wraps."))
 ```
 
 `llm_client`를 주입하면 다른 LLM 연동으로 교체하거나(예: `GeminiLLMClient`가 아닌 다른 `LLMClient` 구현체), 테스트에서는 `FakeLLMClient`로 네트워크 없이 검증할 수 있습니다.
+
+> `cd lossy_clone` 후 접두사 없이 `from chatbot import Chatbot`처럼 실행하지 마세요. 저장소 루트에 이름이 같은 원본 모듈(`chatbot.py`, `memory/`)이 있어서 잘못된 모듈이 import될 수 있습니다 — 항상 저장소 루트에서 `python -m lossy_clone`을 사용하세요.
