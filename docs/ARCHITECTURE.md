@@ -1,24 +1,37 @@
 # 아키텍처
 
-## 디렉토리 구조
+## 독립성 원칙
+`lossy_clone/`은 상위 프로젝트(`memory-augmented-learning-chatbot`)의 어떤 파일도 import하지 않는다. 이 폴더 하나만 잘라서 다른 위치에 옮겨도 그대로 실행되어야 하므로, 모든 코드/데이터/의존성 목록은 이 폴더 안에서 자기 완결적으로 유지한다. (문서(`docs/PRD.md`, `ARCHITECTURE.md`, `ADR.md`)는 하네스 프레임워크가 루트 `docs/`를 가드레일로 읽는 구조상 예외적으로 리포지토리 루트에 둔다.)
+
+## 디렉토리 구조 (단계적으로 채워짐)
 ```
-src/
-├── app/               # 페이지 + API 라우트
-├── components/        # UI 컴포넌트
-├── types/             # TypeScript 타입 정의
-├── lib/               # 유틸리티 + 헬퍼
-└── services/          # 외부 API 래퍼
+lossy_clone/
+├── README.md              # (추후) 실행 방법
+├── requirements.txt        # (추후) 최소 의존성
+├── chatbot.py              # 1단계: Chatbot 클래스, chat()
+├── memory/
+│   └── stm.py               # 1단계: 세션 내 최근 메시지 저장/조회
+│   # ltm.py, episodic.py 등은 2, 3단계에서 추가
+└── data/                    # 로컬 저장소 (SQLite 등), 실행 시 생성
 ```
+
+파일은 필요해지는 단계에서만 추가한다. 예를 들어 2단계 전까지 `memory/ltm.py`는 존재하지 않는다.
 
 ## 패턴
-{사용하는 디자인 패턴 (예: Server Components 기본, 인터랙션이 필요한 곳만 Client Component)}
+원본의 "3계층 메모리(STM/LTM/Episodic)"라는 개념 구분은 그대로 따라가지만, 각 계층은 독립된 최소 구현으로 단계마다 새로 짠다. 계층 간 결합은 원본처럼 촘촘한 상호 참조(트레이스, 통합 컨텍스트 병합 등)를 그대로 옮기지 않고, 각 단계에서 필요한 최소한의 연결만 만든다.
 
-## 데이터 흐름
+## 데이터 흐름 (1단계)
 ```
-{데이터가 어떻게 흐르는지 (예:
-사용자 입력 → Client Component → API Route → 외부 API → 응답 → UI 업데이트
-)}
+사용자 입력
+  → Chatbot.chat(message)
+  → STM에 사용자 메시지 저장
+  → STM에서 최근 대화 이력 읽기
+  → 응답 생성 (LLM 호출)
+  → STM에 응답 저장
+  → 응답 반환
 ```
+LTM/Episodic 단계가 추가되면 이 흐름에 "세션 종료 시 LTM 전이", "응답 생성 시 LTM/Episodic 조회" 단계가 순서대로 끼워진다.
 
 ## 상태 관리
-{상태 관리 방식 (예: 서버 상태는 Server Components, 클라이언트 상태는 useState/useReducer)}
+- 세션 내 대화 상태(STM)는 로컬 SQLite 파일(`lossy_clone/data/` 아래)에 저장한다. 원본과 동일하게 파일 기반으로 가고, 필드 이름과 구성도 기본적으로 원본을 따르되 이름이 좋지 않은 필드만 바꾼다.
+- 프로세스 밖 상태(LTM, Episodic)는 각각의 단계에서 도입되기 전까지는 존재하지 않는다.
