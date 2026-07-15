@@ -8,7 +8,12 @@
       "status": "completed",
       "summary": "docs/ADR.md에 ADR-007 추가. lossy_clone/memory/episodic.py 신설: init_episodic(conn)/save_episodes(conn, session_id, episodes: list[dict])->list[dict]/get_episodes_by_session(conn, session_id)->list[dict], 스키마는 episodic(id, session_id, topic, strengths, weaknesses, questions, created_at)만, append-only(병합 없음)."
     },
-    { "step": 1, "name": "chatbot-episodic-extraction", "status": "pending" },
+    {
+      "step": 1,
+      "name": "chatbot-episodic-extraction",
+      "status": "completed",
+      "summary": "docs/ADR.md에 ADR-008 추가. chatbot.py: _EPISODIC_INSTRUCTION + _strip_code_fence/_parse_episodes 헬퍼 추가, end_session()이 LTM 요약 저장 후 Chatbot._extract_and_save_episodes()로 별도 generate() 호출을 수행. episodic 테이블은 항상 init(stm/ltm과 동일 패턴), LLM 예외·JSON 파싱 실패·빈 topic 항목은 조용히 무시. LTM 요약 호출 실패 시 episodic 호출은 시도되지 않음(순서 고정)."
+    },
     { "step": 2, "name": "docs-sync-phase3", "status": "pending" }
   ]
 }
