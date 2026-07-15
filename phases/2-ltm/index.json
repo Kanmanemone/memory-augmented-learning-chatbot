@@ -8,7 +8,12 @@
       "status": "completed",
       "summary": "docs/ADR.md에 ADR-005 추가. lossy_clone/memory/ltm.py 신설: init_ltm(conn)/save_summary(conn, session_id, summary)->dict/get_summaries_by_session(conn, session_id)->list[dict], 스키마는 ltm(id, session_id, summary, created_at)만."
     },
-    { "step": 1, "name": "stm-full-history", "status": "pending" },
+    {
+      "step": 1,
+      "name": "stm-full-history",
+      "status": "completed",
+      "summary": "lossy_clone/memory/stm.py의 get_recent_messages(conn, session_id, limit: Optional[int] = 20) 확장: limit=None이면 LIMIT 없이 turn_index ASC로 세션 전체 반환, 정수 limit은 기존 동작(DESC LIMIT N 후 reversed) 그대로 유지."
+    },
     { "step": 2, "name": "chatbot-end-session", "status": "pending" },
     { "step": 3, "name": "cli-end-session-wiring", "status": "pending" },
     { "step": 4, "name": "docs-sync-phase2", "status": "pending" }
