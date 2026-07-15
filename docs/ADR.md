@@ -34,3 +34,8 @@ lossy_clone은 원본을 그대로 베끼는 것이 아니라, 개념과 전체 
 **결정**: 세션 종료는 자동 감지(exit 키워드 파싱, 최대 턴 수 도달, 유휴 시간 초과 등)가 아니라 `Chatbot.end_session()` 명시적 호출로만 트리거한다. 같은 `Chatbot` 인스턴스에서 `end_session()`을 여러 번 호출하면 그때마다 STM 전체 이력이 다시 요약되어 LTM에 별도 row로 중복 저장될 수 있다 — 이를 막는 상태 추적(예: "이미 종료된 세션" 플래그)은 만들지 않는다.
 **이유**: 원본의 `session_manager.py`처럼 exit-command 감지·`max_turns`·`inactivity_timeout` 판단 로직을 갖추는 것은 `PRD.md` 4단계("반복 질문 감지 등 세부 동작") 스코프다. 2단계는 "요약해서 LTM에 넘긴다"는 흐름 자체가 동작하는 것이 목표다.
 **트레이드오프**: 호출자가 `end_session()`을 실수로 여러 번 부르면 중복 요약이 쌓인다. 지금은 감수하고, 필요해지면 이후 단계에서 다룬다.
+
+### ADR-007: Episodic은 topic/strengths/weaknesses/questions만 담는 append-only 테이블로 시작한다
+**결정**: Episodic은 `topic`/`strengths`/`weaknesses`/`questions`만 담는 append-only 테이블로 시작한다. 원본의 taxonomy(9개 카테고리 enum), confidence score, 임베딩+Chroma, `SequenceMatcher` 기반 반복 감지(repeat-detection), source_message_ids/turn_indices/timestamps 추적, `occurrence_count` 같은 필드/로직은 넣지 않는다. 같은 `topic`이 여러 세션에 걸쳐 반복돼도 기존 레코드에 병합(upsert)하지 않고, 매번 새 row로 쌓는다.
+**이유**: `PRD.md` MVP 제외 사항에 "반복 질문 감지", "Chroma 등 벡터 DB, 임베딩 검색"이 명시적으로 4단계 스코프로 빠져 있다. LTM(`ltm` 테이블, ADR-005/006)도 같은 이유로 병합 없이 append-only로 설계했으므로 Episodic도 같은 패턴을 따른다.
+**트레이드오프**: 같은 주제를 여러 세션에서 반복 학습해도 "누적된 하나의 학습 이력"으로 합쳐 보여줄 수 없고, 세션별로 흩어진 row들을 나중에(4단계) 조회/집계해야 한다.
