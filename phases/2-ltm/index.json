@@ -2,7 +2,12 @@
   "project": "lossy_clone",
   "phase": "2-ltm",
   "steps": [
-    { "step": 0, "name": "ltm-schema", "status": "pending" },
+    {
+      "step": 0,
+      "name": "ltm-schema",
+      "status": "completed",
+      "summary": "docs/ADR.md에 ADR-005 추가. lossy_clone/memory/ltm.py 신설: init_ltm(conn)/save_summary(conn, session_id, summary)->dict/get_summaries_by_session(conn, session_id)->list[dict], 스키마는 ltm(id, session_id, summary, created_at)만."
+    },
     { "step": 1, "name": "stm-full-history", "status": "pending" },
     { "step": 2, "name": "chatbot-end-session", "status": "pending" },
     { "step": 3, "name": "cli-end-session-wiring", "status": "pending" },
