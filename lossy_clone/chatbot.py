@@ -10,7 +10,12 @@ from pathlib import Path
 from typing import Optional, Union
 
 from lossy_clone.llm import GeminiLLMClient, LLMClient
+from lossy_clone.memory.ltm import init_ltm, save_summary
 from lossy_clone.memory.stm import add_message, get_recent_messages, init_stm
+
+_SUMMARY_INSTRUCTION = (
+    "다음은 사용자와 나눈 대화 전체 기록이다. 이 대화의 핵심 내용을 한국어로 간단히 요약하라."
+)
 
 _PACKAGE_DIR = Path(__file__).resolve().parent
 _DEFAULT_DB_PATH = _PACKAGE_DIR / "data" / "chatbot.db"
@@ -45,5 +50,25 @@ class Chatbot:
 
             add_message(conn, session_id=self.session_id, role="assistant", content=reply)
             return reply
+        finally:
+            conn.close()
+
+    def end_session(self) -> Optional[str]:
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        try:
+            init_stm(conn)
+            history = get_recent_messages(conn, session_id=self.session_id, limit=None)
+            if not history:
+                return None
+
+            llm_messages = [{"role": "system", "content": _SUMMARY_INSTRUCTION}]
+            llm_messages += [{"role": row["role"], "content": row["content"]} for row in history]
+
+            summary = self._llm_client.generate(llm_messages)
+
+            init_ltm(conn)
+            save_summary(conn, session_id=self.session_id, summary=summary)
+            return summary
         finally:
             conn.close()
