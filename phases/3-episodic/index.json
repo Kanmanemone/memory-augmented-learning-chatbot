@@ -1,0 +1,9 @@
+{
+  "project": "lossy_clone",
+  "phase": "3-episodic",
+  "steps": [
+    { "step": 0, "name": "episodic-schema", "status": "pending" },
+    { "step": 1, "name": "chatbot-episodic-extraction", "status": "pending" },
+    { "step": 2, "name": "docs-sync-phase3", "status": "pending" }
+  ]
+}
