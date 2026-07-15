@@ -28,9 +28,30 @@ sequenceDiagram
 - **`generate()`는 fetch 함수가 아님**: fetch는 앞 단계 `SELECT`에서 이미 끝났다. `generate(messages=...)`는 앞서 설명한 대화 전체(이력)를 입력으로 받아 다음 응답 텍스트만 생성한다. 순서: `SELECT` → 이력 반환 → `generate(...)`. Gemini REST 엔드포인트 이름(`generateContent`)에 맞춘 네이밍이다.
 - **Chroma(벡터 DB)는 1단계에서 안 씀**: `lossy_clone/` 전체에 Chroma 관련 코드가 없고, `lossy_clone/requirements.txt`에도 `requests`만 있다 (저장소 루트의 `requirements.txt`에는 `chromadb`가 있지만, 그건 원본 프로젝트 것이고 `lossy_clone`은 참조하지 않는다). `docs/PRD.md`의 "MVP 제외 사항 (1단계 기준)"에 "Chroma 등 벡터 DB, 임베딩 검색"이 명시적으로 빠져 있고, 1단계는 SQLite 기반 STM만 쓴다. Chroma는 원본 프로젝트(루트의 `episodic_schema.py`, `memory/ltm.py` 등)에서 LTM/Episodic 임베딩 검색용으로 쓰이는 것으로, `lossy_clone`에서는 아직 없는 2~4단계(LTM/Episodic/검색·통합)에서나 등장할 가능성이 있다.
 
-## 2단계 — LTM (예정)
+## 2단계 — LTM
 
-세션 종료 시 STM을 요약해 장기 기억으로 전이하는 흐름이 추가됩니다. 아직 구현되지 않았습니다.
+```mermaid
+sequenceDiagram
+    actor User
+    participant Bot as Chatbot.end_session()
+    participant DB as SQLite (stm_messages / ltm)
+    participant Gemini as Gemini API
+
+    User->>Bot: end_session()
+    Bot->>DB: SELECT ... WHERE session_id=? ORDER BY turn_index ASC (limit=None)
+    DB-->>Bot: 세션 전체 이력 [(user, "decorators?"), (assistant, "Decorators let you wrap..."), ...]
+    Bot->>Gemini: generate(messages=[{role:"system", content:"다음은 사용자와 나눈 대화 전체 기록이다..."}, ...전체 이력])
+    Gemini-->>Bot: "사용자는 Python 데코레이터와 functools.wraps에 대해 질문함"
+    Bot->>DB: INSERT INTO ltm (id, session_id, summary, created_at)
+    Bot-->>User: "사용자는 Python 데코레이터와 functools.wraps에 대해 질문함"
+```
+
+- **`end_session()`은 `chat()`과 트리거 시점이 다르다**: `chat()`은 매 턴 호출되지만 `end_session()`은 호출자가 세션을 끝내고 싶을 때 명시적으로 부른다. 원본의 exit-keyword 감지·`max_turns`·`inactivity_timeout` 같은 자동 판단은 없다 — `docs/ADR.md` ADR-006.
+- **왜 `limit=None`으로 전체 이력을 다시 읽는가**: `chat()`의 대화 컨텍스트(`history_limit`, 기본 20개)와 요약 대상은 서로 다른 개념이다. 세션이 20턴을 넘으면 `chat()`은 최근 20개만 LLM에 보내지만, `end_session()`은 세션 전체를 요약해야 하므로 별도로 전체 조회가 필요하다.
+- **STM 이력이 비어 있으면 아무 것도 하지 않는다**: `history`가 빈 리스트면 LLM을 호출하지 않고 `None`을 반환한다. 빈 대화를 요약시키는 것은 의미가 없고, 불필요한 LLM 호출 비용도 아낀다.
+- **요약 지시 메시지(`role="system"`)는 STM에 저장되지 않는다**: `chat()`이 저장하는 실제 대화 기록이 아니라 이번 `generate()` 호출에만 쓰이는 일회성 지시이기 때문에, `add_message()`로 `stm_messages`에 남기지 않는다.
+- **LTM엔 `summary` 하나만 담는다**: 원본의 `struggles`/`strengths`/`confusions`/`topic_tags`/`embedding`은 넣지 않는다. 강점/약점/혼란 누적은 3단계(Episodic memory)의 몫이다 — `docs/ADR.md` ADR-005.
+- **`end_session()`을 여러 번 호출하면 LTM에 요약이 중복으로 쌓인다**: STM은 지우지 않으므로 다시 호출하면 같은 이력을 또 요약해 새 row를 만든다. 이를 막는 상태 추적은 의도적으로 만들지 않았다 — `docs/ADR.md` ADR-006.
 
 ## 3단계 — Episodic memory (예정)
 

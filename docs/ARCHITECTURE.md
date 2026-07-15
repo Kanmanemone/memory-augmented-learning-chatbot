@@ -6,16 +6,17 @@
 ## 디렉토리 구조 (단계적으로 채워짐)
 ```
 lossy_clone/
-├── README.md              # (추후) 실행 방법
-├── requirements.txt        # (추후) 최소 의존성
-├── chatbot.py              # 1단계: Chatbot 클래스, chat()
+├── README.md              # 실행 방법
+├── requirements.txt        # 최소 의존성
+├── chatbot.py              # 1단계: Chatbot 클래스, chat() / 2단계: end_session()
 ├── memory/
-│   └── stm.py               # 1단계: 세션 내 최근 메시지 저장/조회
-│   # ltm.py, episodic.py 등은 2, 3단계에서 추가
+│   ├── stm.py               # 1단계: 세션 내 최근 메시지 저장/조회
+│   └── ltm.py                # 2단계: 세션 요약 저장/조회
+│   # episodic.py 등은 3단계에서 추가
 └── data/                    # 로컬 저장소 (SQLite 등), 실행 시 생성
 ```
 
-파일은 필요해지는 단계에서만 추가한다. 예를 들어 2단계 전까지 `memory/ltm.py`는 존재하지 않는다.
+파일은 필요해지는 단계에서만 추가한다. 예를 들어 3단계 전까지 `memory/episodic.py`는 존재하지 않는다.
 
 ## 패턴
 원본의 "3계층 메모리(STM/LTM/Episodic)"라는 개념 구분은 그대로 따라가지만, 각 계층은 독립된 최소 구현으로 단계마다 새로 짠다. 계층 간 결합은 원본처럼 촘촘한 상호 참조(트레이스, 통합 컨텍스트 병합 등)를 그대로 옮기지 않고, 각 단계에서 필요한 최소한의 연결만 만든다.
@@ -30,8 +31,21 @@ lossy_clone/
   → STM에 응답 저장
   → 응답 반환
 ```
-LTM/Episodic 단계가 추가되면 이 흐름에 "세션 종료 시 LTM 전이", "응답 생성 시 LTM/Episodic 조회" 단계가 순서대로 끼워진다.
+Episodic 단계가 추가되면 "응답 생성 시 LTM/Episodic 조회" 단계가 순서대로 끼워진다.
+
+## 데이터 흐름 (2단계)
+```
+세션 종료
+  → Chatbot.end_session()
+  → STM에서 세션 전체 이력 읽기 (get_recent_messages(limit=None))
+  → 이력이 비어 있으면 종료 (LLM 호출/저장 없이 None 반환)
+  → 요약 지시 메시지(role="system") + STM 이력을 LLM에 전달 (LLMClient.generate(...))
+  → 응답을 LTM에 저장 (memory.ltm.save_summary(...))
+  → 요약 텍스트 반환
+```
+`end_session()`은 `chat()`과 달리 매 턴이 아니라 세션이 끝날 때 한 번(또는 호출자가 원할 때마다) 실행된다. 요약 지시 메시지는 LLM 호출에만 쓰이고 STM에는 저장되지 않는다. Episodic 단계가 추가되면 이 흐름에 "주제별 학습 이력 누적" 단계가 끼워진다.
 
 ## 상태 관리
 - 세션 내 대화 상태(STM)는 로컬 SQLite 파일(`lossy_clone/data/` 아래)에 저장한다. 원본과 동일하게 파일 기반으로 가고, 필드 이름과 구성도 기본적으로 원본을 따르되 이름이 좋지 않은 필드만 바꾼다.
-- 프로세스 밖 상태(LTM, Episodic)는 각각의 단계에서 도입되기 전까지는 존재하지 않는다.
+- 세션 요약(LTM)도 2단계부터 같은 SQLite 파일의 `ltm` 테이블에 저장된다.
+- 프로세스 밖 상태 중 Episodic은 3단계에서 도입되기 전까지는 존재하지 않는다.
