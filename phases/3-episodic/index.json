@@ -2,7 +2,12 @@
   "project": "lossy_clone",
   "phase": "3-episodic",
   "steps": [
-    { "step": 0, "name": "episodic-schema", "status": "pending" },
+    {
+      "step": 0,
+      "name": "episodic-schema",
+      "status": "completed",
+      "summary": "docs/ADR.md에 ADR-007 추가. lossy_clone/memory/episodic.py 신설: init_episodic(conn)/save_episodes(conn, session_id, episodes: list[dict])->list[dict]/get_episodes_by_session(conn, session_id)->list[dict], 스키마는 episodic(id, session_id, topic, strengths, weaknesses, questions, created_at)만, append-only(병합 없음)."
+    },
     { "step": 1, "name": "chatbot-episodic-extraction", "status": "pending" },
     { "step": 2, "name": "docs-sync-phase3", "status": "pending" }
   ]
