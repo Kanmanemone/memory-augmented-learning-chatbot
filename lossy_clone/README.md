@@ -6,10 +6,10 @@
 
 - ✅ 1단계 — Chatbot 인스턴스 + STM (완료)
 - ✅ 2단계 — LTM (세션 요약 전이) (완료)
-- ⬜ 3단계 — Episodic memory (주제별 학습 이력 누적)
+- ✅ 3단계 — Episodic memory (주제별 학습 이력 누적) (완료)
 - ⬜ 4단계 — LTM/Episodic 검색, 반복 질문 감지 등 세부 동작
 
-3~4단계는 아직 구현 전이라 범위/순서가 바뀔 수 있는 예정 로드맵입니다. 단계별 데이터 흐름 다이어그램은 [ARCHITECTURE.md](./ARCHITECTURE.md)에서 확인할 수 있습니다.
+4단계는 아직 구현 전이라 범위/순서가 바뀔 수 있는 예정 로드맵입니다. 단계별 데이터 흐름 다이어그램은 [ARCHITECTURE.md](./ARCHITECTURE.md)에서 확인할 수 있습니다.
 
 ## 요구사항
 
@@ -35,7 +35,7 @@ you> exit
 bot> (세션 요약 저장됨: Gemini가 생성한 요약)
 ```
 
-`exit`/`quit` 입력 또는 Ctrl+D(EOF)로 종료합니다. 주고받은 메시지는 `lossy_clone/data/chatbot.db`의 STM에 쌓이고, 같은 세션의 다음 턴 컨텍스트로 재사용됩니다. CLI가 종료될 때 세션 전체 대화가 요약되어 같은 파일의 LTM(`ltm` 테이블)에 저장되고, 성공하면 `bot> (세션 요약 저장됨: ...)`이 출력됩니다.
+`exit`/`quit` 입력 또는 Ctrl+D(EOF)로 종료합니다. 주고받은 메시지는 `lossy_clone/data/chatbot.db`의 STM에 쌓이고, 같은 세션의 다음 턴 컨텍스트로 재사용됩니다. CLI가 종료될 때 세션 전체 대화가 요약되어 같은 파일의 LTM(`ltm` 테이블)에 저장되고, 성공하면 `bot> (세션 요약 저장됨: ...)`이 출력됩니다. 같은 시점에 세션에서 다룬 주제별 강점/약점/질문도 Episodic(`episodic` 테이블)에 조용히(CLI 출력 없이) 저장됩니다.
 
 ## 코드에서 사용
 
@@ -49,6 +49,8 @@ print(bot.chat("I am confused about functools.wraps."))
 
 summary = bot.end_session()  # STM 전체를 요약해 LTM에 저장하고, 요약 텍스트를 반환한다
 print(summary)
+# 같은 호출 안에서 세션에서 다룬 주제별 강점/약점/질문도 Episodic(`episodic` 테이블)에 저장된다
+# (반환값에는 포함되지 않는 side effect).
 ```
 
 `llm_client`를 주입하면 `GeminiLLMClient` 대신 다른 `LLMClient` 구현체로 교체할 수 있습니다. 테스트에서는 `FakeLLMClient`로 네트워크 없이 검증합니다.

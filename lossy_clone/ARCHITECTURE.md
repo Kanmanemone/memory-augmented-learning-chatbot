@@ -54,9 +54,30 @@ sequenceDiagram
 - **LTM엔 `summary` 하나만 담는다**: 원본의 `struggles`/`strengths`/`confusions`/`topic_tags`/`embedding`은 넣지 않는다. 강점/약점/혼란 누적은 3단계(Episodic memory)의 몫이다 — `docs/ADR.md` ADR-005.
 - **`end_session()`을 여러 번 호출하면 LTM에 요약이 중복으로 쌓인다**: STM은 지우지 않으므로 다시 호출하면 같은 이력을 또 요약해 새 row를 만든다. 이를 막는 상태 추적은 의도적으로 만들지 않았다 — `docs/ADR.md` ADR-006.
 
-## 3단계 — Episodic memory (예정)
+## 3단계 — Episodic memory
 
-주제별 학습 이력(강점/약점/질문)을 누적하는 흐름이 추가됩니다. 아직 구현되지 않았습니다.
+```mermaid
+sequenceDiagram
+    actor User
+    participant Bot as Chatbot.end_session()
+    participant DB as SQLite (stm_messages / ltm / episodic)
+    participant Gemini as Gemini API
+
+    Note over Bot,DB: (2단계: LTM 요약 저장까지 끝난 직후, 같은 end_session() 호출 안)
+    Bot->>Gemini: generate(messages=[{role:"system", content:"...topics 배열로 답하라..."}, ...전체 이력])
+    Gemini-->>Bot: "```json\n{\"topics\": [{\"topic\": \"decorators\", \"strengths\": [\"@property\"], \"weaknesses\": [\"wraps\"], \"questions\": [\"why wraps?\"]}]}\n```"
+    Bot->>Bot: 코드펜스 제거 후 json.loads (실패하면 여기서 조용히 중단, LTM 결과엔 영향 없음)
+    Bot->>DB: INSERT INTO episodic (id, session_id, topic, strengths, weaknesses, questions, created_at)
+    Bot-->>User: "사용자는 Python 데코레이터와 functools.wraps에 대해 질문함" (2단계와 동일한 요약 반환값)
+```
+
+- **`DB` 레인에 `episodic`이 추가됐다**: 2단계와 같은 이유(`docs/ADR.md` ADR-001 근처 설명 참고)로, `stm_messages`/`ltm`/`episodic` 모두 같은 SQLite 파일 안의 서로 다른 테이블이라 다이어그램에서 `DB` 하나로 합쳐 표시한다.
+- **LTM 요약과 별도의 `generate()` 호출이다**: 한 응답에 요약+topics를 함께 요청하지 않는다. 요약은 자유 형식 텍스트, Episodic 추출은 구조화된 JSON이라 프롬프트 성격이 달라서 분리했다 — `docs/ADR.md` ADR-008.
+- **순서가 고정되어 있다**: LTM 요약 호출(2단계)이 먼저이고, 그 호출이 실패하면 이 흐름(Episodic 추출) 자체가 시도되지 않는다. 반대로 이 흐름이 실패해도(예외, JSON 파싱 실패) 이미 저장된 LTM 요약에는 영향을 주지 않고 조용히 건너뛴다 — ADR-008.
+- **코드펜스 제거가 필요한 이유**: 실제 Gemini는 "JSON만 출력하라"고 지시해도 응답을 ` ```json ... ``` ` 코드펜스로 감싸서 반환하는 경우가 흔하다. `GeminiLLMClient`는 JSON 강제 옵션(`response_mime_type` 등)을 쓰지 않으므로, `json.loads()` 이전에 코드펜스를 벗겨내는 전처리가 없으면 실제 API에서는 매번 파싱에 실패해 아무것도 저장되지 않는다.
+- **`topic`이 빈 문자열인 항목은 저장하지 않는다**: LLM이 형식은 맞췄지만 내용이 빈 항목을 만들 수 있어서, 저장 직전에 걸러낸다. `strengths`/`weaknesses`/`questions`가 없거나 리스트가 아니면 빈 리스트로 취급한다.
+- **Episodic엔 `topic`/`strengths`/`weaknesses`/`questions`만 담는다**: 원본의 taxonomy(9개 카테고리), confidence score, 임베딩+Chroma, 반복 감지(`SequenceMatcher`), source tracking, `occurrence_count`는 넣지 않는다 — `docs/ADR.md` ADR-007.
+- **같은 topic이 반복돼도 병합(upsert)하지 않는다**: LTM과 동일하게(ADR-006) 매번 새 row로 쌓인다. "반복 질문 감지" 같은 병합/중복 판단은 `docs/PRD.md` 4단계 스코프다 — ADR-007.
 
 ## 4단계 — 검색/통합 (예정)
 
