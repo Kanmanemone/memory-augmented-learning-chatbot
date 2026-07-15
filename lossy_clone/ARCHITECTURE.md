@@ -84,6 +84,35 @@ sequenceDiagram
 - **Episodic엔 `topic`/`strengths`/`weaknesses`/`questions`만 담는다**: 원본의 taxonomy(9개 카테고리), confidence score, 임베딩+Chroma, 반복 감지(`SequenceMatcher`), source tracking, `occurrence_count`는 넣지 않는다 — `docs/ADR.md` ADR-007.
 - **같은 topic이 반복돼도 병합(upsert)하지 않는다**: LTM과 동일하게(ADR-006) 매번 새 row로 쌓인다. "반복 질문 감지" 같은 병합/중복 판단은 `docs/PRD.md` 4단계 스코프다 — ADR-007.
 
-## 4단계 — 검색/통합 (예정)
+## 4단계 — 검색/통합
 
-LTM/Episodic 검색, 반복 질문 감지, 통합 컨텍스트 구성이 추가됩니다. 아직 구현되지 않았습니다.
+`docs/PRD.md` 로드맵은 이 4단계로 끝난다. `chat()`이 매 턴 과거 LTM/Episodic을 검색해 관련 있으면 답변에 참고하도록 만드는 것이 핵심이고, "반복 질문 감지"는 별도 알고리즘 없이 이 검색 결과에 얹혀서 자연스럽게 처리된다 (아래 불릿 참고).
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant Bot as Chatbot.chat()
+    participant DB as SQLite (stm_messages / ltm / episodic)
+    participant Gemini as Gemini API
+
+    User->>Bot: "사인펜도 흑연처럼 지우개로 지워지나요?"
+    Bot->>DB: INSERT (role='user', content=..., turn_index=N)
+    Bot->>DB: search_ltm(query="사인펜도 흑연처럼 지우개로 지워지나요?")
+    DB-->>Bot: ltm_hits (토큰이 겹치는 과거 summary, 없으면 빈 리스트)
+    Bot->>DB: search_episodic(query="사인펜도 흑연처럼 지우개로 지워지나요?")
+    DB-->>Bot: episodic_hits (토큰이 겹치는 과거 topic/questions, 없으면 빈 리스트)
+    Bot->>Bot: build_memory_context(ltm_hits, episodic_hits) — 둘 다 비어있으면 None
+    Bot->>DB: SELECT ... WHERE session_id=? ORDER BY turn_index DESC LIMIT 20
+    DB-->>Bot: 최근 대화 이력
+    Bot->>Gemini: generate(messages=[{role:"system", content:"과거 요약/주제 텍스트"}, ...최근 이력])
+    Gemini-->>Bot: "이전 질문에서 흑연과 볼펜 잉크 차이를 다뤘었는데, 사인펜도 그 연장선입니다..."
+    Bot->>DB: INSERT (role='assistant', content=..., turn_index=N+1)
+    Bot-->>User: "이전 질문에서 흑연과 볼펜 잉크 차이를 다뤘었는데, 사인펜도 그 연장선입니다..."
+```
+
+- **검색은 세션을 넘나든다**: `search_ltm`/`search_episodic`는 `session_id`로 제한하지 않고 전체 `ltm`/`episodic` 테이블에서 찾는다. Episodic/LTM은 애초에 "지금 세션이 끝난 뒤에도 남는 기억"이 목적이라, 지금 세션에 국한하면 존재 의미가 없다.
+- **검색 쿼리는 이번 턴에 사용자가 방금 입력한 메시지 그 자체다**: 누적 STM 이력이 아니라 `message` 파라미터를 그대로 쓴다.
+- **검색은 임베딩 없이 키워드 토큰 겹침만 쓴다**: 쿼리와 저장된 텍스트를 각각 소문자 토큰 집합으로 만들어 교집합 크기로 랭킹한다. Chroma나 벡터 유사도는 쓰지 않는다 — `docs/ADR.md` ADR-010.
+- **컨텍스트는 `role="system"`으로 STM 이력 앞에 붙는다**: `chat()`의 STM 이력은 항상 방금 저장한 사용자 메시지로 끝나므로, system 메시지를 앞에 붙여도 Gemini에 보내는 마지막 turn은 그대로 `user`로 유지된다 — `end_session()`(ADR-009)과 반대로, 여기서는 system을 이력 뒤가 아니라 **앞**에 붙여도 안전하다. 이 컨텍스트 메시지도 STM에는 저장되지 않는다 — `docs/ADR.md` ADR-011.
+- **매치가 없으면 아무것도 안 붙는다**: `ltm_hits`/`episodic_hits`가 둘 다 비면 `build_memory_context`가 `None`을 반환하고, `chat()`은 4단계 이전과 완전히 동일하게 동작한다 (새 사용자, 무관한 질문의 경우).
+- **반복 질문 감지는 별도 알고리즘이 아니다**: 원본처럼 유사도 임계값을 계산하고 답변에 실제로 반영됐는지 사후 검증하지 않는다. 검색된 Episodic의 과거 `questions`를 컨텍스트에 그대로 노출하고 "관련 있으면 참고해서 답하라"는 지시만 주면, 지금 질문이 과거 질문과 비슷한지는 Gemini 스스로 판단해서 자연어로 언급한다 (위 예시의 "이전 질문에서... 다뤘었는데"가 그 결과다) — `docs/ADR.md` ADR-011.

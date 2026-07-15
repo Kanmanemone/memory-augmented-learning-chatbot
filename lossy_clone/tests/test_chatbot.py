@@ -5,8 +5,81 @@ from pathlib import Path
 
 import pytest
 
-from lossy_clone.chatbot import Chatbot
+from lossy_clone.chatbot import Chatbot, build_memory_context
 from lossy_clone.llm import FakeLLMClient
+
+
+def test_build_memory_context_returns_none_when_both_empty():
+    assert build_memory_context(ltm_hits=[], episodic_hits=[]) is None
+
+
+def test_build_memory_context_includes_ltm_summary_text():
+    context = build_memory_context(
+        ltm_hits=[{"id": "1", "session_id": "s0", "summary": "데코레이터에 대해 이야기함", "created_at": "t"}],
+        episodic_hits=[],
+    )
+
+    assert context is not None
+    assert "데코레이터에 대해 이야기함" in context
+
+
+def test_build_memory_context_includes_episodic_topic_and_questions():
+    context = build_memory_context(
+        ltm_hits=[],
+        episodic_hits=[
+            {
+                "id": "1",
+                "session_id": "s0",
+                "topic": "decorators",
+                "strengths": ["@property 이해함"],
+                "weaknesses": ["functools.wraps 헷갈림"],
+                "questions": ["@wraps가 뭔가요?"],
+                "created_at": "t",
+            }
+        ],
+    )
+
+    assert context is not None
+    assert "decorators" in context
+    assert "@wraps가 뭔가요?" in context
+
+
+def test_build_memory_context_handles_ltm_only():
+    context = build_memory_context(
+        ltm_hits=[{"id": "1", "session_id": "s0", "summary": "요약본", "created_at": "t"}],
+        episodic_hits=[],
+    )
+    assert context is not None
+    assert "요약본" in context
+
+
+def test_build_memory_context_handles_episodic_only():
+    context = build_memory_context(
+        ltm_hits=[],
+        episodic_hits=[
+            {
+                "id": "1",
+                "session_id": "s0",
+                "topic": "recursion",
+                "strengths": [],
+                "weaknesses": [],
+                "questions": [],
+                "created_at": "t",
+            }
+        ],
+    )
+    assert context is not None
+    assert "recursion" in context
+
+
+def test_build_memory_context_includes_reference_instruction():
+    context = build_memory_context(
+        ltm_hits=[{"id": "1", "session_id": "s0", "summary": "요약본", "created_at": "t"}],
+        episodic_hits=[],
+    )
+    assert context is not None
+    assert ("과거" in context or "이전" in context)
+    assert ("참고" in context or "활용" in context)
 
 
 def test_chat_returns_fake_llm_response(tmp_path):
@@ -338,3 +411,97 @@ def test_end_session_called_twice_creates_two_ltm_rows(tmp_path):
     conn.close()
 
     assert len(rows) == 2
+
+
+def _seed_ltm_summary(db_path, session_id, summary):
+    conn = sqlite3.connect(db_path)
+    from lossy_clone.memory.ltm import init_ltm, save_summary
+
+    init_ltm(conn)
+    save_summary(conn, session_id=session_id, summary=summary)
+    conn.close()
+
+
+def test_chat_injects_ltm_context_when_relevant_summary_exists(tmp_path):
+    db_path = tmp_path / "test.db"
+    _seed_ltm_summary(db_path, "past-session", "사용자는 데코레이터에 대해 질문했다")
+
+    fake = FakeLLMClient(response="ok")
+    bot = Chatbot(llm_client=fake, db_path=db_path, session_id="new-session")
+    bot.chat("데코레이터에 대해 더 알려줘")
+
+    last_call = fake.received_calls[-1]
+    assert last_call[0]["role"] == "system"
+    assert "데코레이터" in last_call[0]["content"]
+
+
+def test_chat_injects_episodic_context_when_relevant_topic_exists(tmp_path):
+    db_path = tmp_path / "test.db"
+    conn = sqlite3.connect(db_path)
+    from lossy_clone.memory.episodic import init_episodic, save_episodes
+
+    init_episodic(conn)
+    save_episodes(
+        conn,
+        session_id="past-session",
+        episodes=[
+            {
+                "topic": "recursion",
+                "strengths": [],
+                "weaknesses": ["base case 헷갈림"],
+                "questions": ["재귀 base case가 뭐야?"],
+            }
+        ],
+    )
+    conn.close()
+
+    fake = FakeLLMClient(response="ok")
+    bot = Chatbot(llm_client=fake, db_path=db_path, session_id="new-session")
+    bot.chat("재귀 base case 다시 설명해줘")
+
+    last_call = fake.received_calls[-1]
+    assert last_call[0]["role"] == "system"
+    assert "recursion" in last_call[0]["content"]
+    assert "재귀 base case가 뭐야?" in last_call[0]["content"]
+
+
+def test_chat_has_no_system_context_when_nothing_relevant_stored(tmp_path):
+    db_path = tmp_path / "test.db"
+    fake = FakeLLMClient(response="ok")
+    bot = Chatbot(llm_client=fake, db_path=db_path, session_id="s1")
+
+    bot.chat("완전히 새로운 질문입니다")
+
+    last_call = fake.received_calls[-1]
+    assert last_call[0]["role"] == "user"
+    assert last_call[0]["content"] == "완전히 새로운 질문입니다"
+
+
+def test_chat_context_injection_does_not_leak_into_stm(tmp_path):
+    db_path = tmp_path / "test.db"
+    _seed_ltm_summary(db_path, "past-session", "사용자는 데코레이터에 대해 질문했다")
+
+    fake = FakeLLMClient(response="ok")
+    bot = Chatbot(llm_client=fake, db_path=db_path, session_id="new-session")
+    bot.chat("데코레이터에 대해 더 알려줘")
+
+    conn = sqlite3.connect(db_path)
+    rows = conn.execute(
+        "SELECT role, content FROM stm_messages WHERE session_id = ?", ("new-session",)
+    ).fetchall()
+    conn.close()
+
+    assert rows == [("user", "데코레이터에 대해 더 알려줘"), ("assistant", "ok")]
+
+
+def test_chat_last_message_is_always_user_even_with_context_injected(tmp_path):
+    db_path = tmp_path / "test.db"
+    _seed_ltm_summary(db_path, "past-session", "사용자는 데코레이터에 대해 질문했다")
+
+    fake = FakeLLMClient(response="ok")
+    bot = Chatbot(llm_client=fake, db_path=db_path, session_id="new-session")
+    bot.chat("데코레이터에 대해 더 알려줘")
+
+    last_call = fake.received_calls[-1]
+    assert last_call[-1]["role"] == "user"
+    assert last_call[-1]["content"] == "데코레이터에 대해 더 알려줘"

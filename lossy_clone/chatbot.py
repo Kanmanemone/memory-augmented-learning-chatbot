@@ -11,8 +11,8 @@ from pathlib import Path
 from typing import Optional, Union
 
 from lossy_clone.llm import GeminiLLMClient, LLMClient
-from lossy_clone.memory.episodic import init_episodic, save_episodes
-from lossy_clone.memory.ltm import init_ltm, save_summary
+from lossy_clone.memory.episodic import init_episodic, save_episodes, search_episodic
+from lossy_clone.memory.ltm import init_ltm, save_summary, search_ltm
 from lossy_clone.memory.stm import add_message, get_recent_messages, init_stm
 
 _SUMMARY_INSTRUCTION = "위 대화의 핵심 내용을 한국어로 간단히 요약하라."
@@ -71,6 +71,39 @@ def _parse_episodes(raw_text: str) -> list:
     return episodes
 
 
+def build_memory_context(ltm_hits: list, episodic_hits: list) -> Optional[str]:
+    """검색된 LTM/Episodic 결과를 하나의 컨텍스트 텍스트로 조립한다.
+
+    ltm_hits, episodic_hits가 둘 다 비어있으면 None을 반환한다. DB나 LLM을
+    전혀 모르는 순수 함수다 (ADR-011).
+    """
+    if not ltm_hits and not episodic_hits:
+        return None
+
+    lines = [
+        "다음은 사용자의 과거 학습 이력이다. 지금 질문과 관련 있으면 참고해서 답하라. "
+        "특히 지금 질문이 과거 질문과 비슷하면 그 점을 언급하고 이어서 설명하라."
+    ]
+
+    if ltm_hits:
+        lines.append("과거 세션 요약:")
+        for hit in ltm_hits:
+            lines.append(f"- {hit['summary']}")
+
+    if episodic_hits:
+        lines.append("과거에 다룬 주제:")
+        for hit in episodic_hits:
+            lines.append(f"- 주제: {hit['topic']}")
+            if hit.get("questions"):
+                lines.append(f"  과거 질문: {', '.join(hit['questions'])}")
+            if hit.get("strengths"):
+                lines.append(f"  잘한 점: {', '.join(hit['strengths'])}")
+            if hit.get("weaknesses"):
+                lines.append(f"  어려워한 점: {', '.join(hit['weaknesses'])}")
+
+    return "\n".join(lines)
+
+
 _PACKAGE_DIR = Path(__file__).resolve().parent
 _DEFAULT_DB_PATH = _PACKAGE_DIR / "data" / "chatbot.db"
 
@@ -97,8 +130,18 @@ class Chatbot:
             init_stm(conn)
             add_message(conn, session_id=self.session_id, role="user", content=message)
 
+            # 과거 LTM/Episodic 중 이번 메시지와 관련 있는 내용을 찾아 system 메시지로
+            # 이력 앞에 붙인다. STM 이력의 마지막은 항상 방금 저장한 사용자 메시지이므로
+            # (ADR-009), system 메시지를 앞에 붙여도 Gemini에 보내는 마지막 turn은
+            # 그대로 user로 유지된다 (docs/ADR.md ADR-011).
+            ltm_hits = search_ltm(conn, query=message)
+            episodic_hits = search_episodic(conn, query=message)
+            memory_context = build_memory_context(ltm_hits, episodic_hits)
+
             history = get_recent_messages(conn, session_id=self.session_id, limit=self._history_limit)
             llm_messages = [{"role": row["role"], "content": row["content"]} for row in history]
+            if memory_context is not None:
+                llm_messages = [{"role": "system", "content": memory_context}] + llm_messages
 
             reply = self._llm_client.generate(llm_messages)
 

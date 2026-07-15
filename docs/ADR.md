@@ -49,3 +49,13 @@ lossy_clone은 원본을 그대로 베끼는 것이 아니라, 개념과 전체 
 **결정**: `LLMClient.generate()`에 넘기는 `messages`는 항상 마지막 원소의 `role`이 `"user"`여야 한다. `end_session()`의 요약/Episodic 추출 지시는 STM 이력 앞에 `role="system"`으로 붙이지 않고, STM 이력 **뒤에** `role="user"`로 덧붙인다.
 **이유**: 실제 Gemini API로 검증하던 중 `end_session()`의 LTM 요약 호출이 `finishReason: "STOP"`과 함께 빈 응답(`parts` 없음, 출력 토큰 0개)을 반환하는 문제가 발생했다. 원인은 STM 이력이 항상 `(user, assistant)` 쌍으로 끝난다는 데 있다 — 지시를 `role="system"`으로 이력 앞에만 붙이면 `llm.py`의 `_build_payload`가 system 메시지를 `contents`가 아니라 `systemInstruction`으로 따로 빼버리므로, 실제 Gemini에 보내는 `contents`의 마지막 turn이 여전히 `model`로 끝난다. Gemini는 마지막 turn이 이미 `model`이면 "더 이어 말할 필요 없음"으로 판단해 빈 응답을 반환할 수 있다. `chat()`은 방금 저장한 사용자 메시지가 항상 마지막이라 이 문제가 없었지만, `end_session()`만 이 함정에 걸렸다.
 **트레이드오프**: `FakeLLMClient` 기반 테스트만으로는 이런 종류의 결함이 드러나지 않는다(가짜 응답은 항상 성공하므로) — 실제 API로 최소 한 번은 수동 검증해야 잡을 수 있다. 이후 STM 이력을 사용하는 LLM 호출을 새로 추가할 때는 항상 마지막 turn이 user인지 확인해야 한다.
+
+### ADR-010: 검색은 키워드 토큰 오버랩만 사용한다, 임베딩/벡터DB 없음
+**결정**: `search_ltm`/`search_episodic`는 쿼리 텍스트와 저장된 내용(LTM `summary`, Episodic `topic`/`strengths`/`weaknesses`/`questions`)을 단순 소문자 토큰 집합 오버랩으로 스코어링해 랭킹한다. Chroma나 임베딩은 쓰지 않는다.
+**이유**: `PRD.md` MVP 제외 사항의 "Chroma 등 벡터 DB, 임베딩 검색"이 계속 배제 대상이고(ADR-005/007), 원본의 벡터+SQLite 하이브리드 스코어링은 `PRD.md` 4단계("필요한 것만 선택적으로")에 비해 과하다.
+**트레이드오프**: 의미적으로 비슷해도 단어가 안 겹치면 못 찾는다 (예: "지우개"와 "eraser"는 매칭 안 됨). 원본 수준의 검색 품질은 기대하지 않는다.
+
+### ADR-011: chat()의 메모리 컨텍스트는 STM 이력 앞에 system 메시지 하나로 주입하고, 반복 질문 감지는 별도 알고리즘 없이 검색 결과에 얹는다
+**결정**: `chat()`은 매 턴 `search_ltm`+`search_episodic`을 호출해 결과가 있으면 `build_memory_context()`로 만든 텍스트 하나를 `role="system"`으로 STM 이력 **앞**에 붙인다. 원본처럼 반복 질문 여부를 별도 임계값/사후검증으로 판정하지 않고, 검색된 과거 Episodic 질문을 컨텍스트에 포함시켜 "관련 있으면 참고해서 답하라"는 지시만 LLM에 준다.
+**이유**: `chat()`의 STM 이력은 항상 사용자가 방금 저장한 메시지로 끝나므로, system 메시지를 이력 앞에 붙여도 Gemini에 보내는 마지막 turn은 그대로 `user`로 유지된다 (`end_session()`과 반대 상황 — ADR-009 위반 아님). 반복 질문 판정 로직(임계값, bridge sentence 등)은 원본에서도 복잡한 부가 기능이라 `PRD.md` "필요한 것만 선택적으로"에 맞춰 생략하고, LLM이 컨텍스트를 보고 자연스럽게 판단하게 맡긴다.
+**트레이드오프**: 검색에 걸리는 내용이 없으면(새 사용자, 무관한 질문) 컨텍스트 없이 기존과 동일하게 동작한다. 반복 질문을 실제로 언급하는지는 LLM 재량이라 보장되지 않는다(원본처럼 강제 삽입하지 않음).

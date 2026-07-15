@@ -2,7 +2,12 @@ import sqlite3
 
 import pytest
 
-from lossy_clone.memory.episodic import get_episodes_by_session, init_episodic, save_episodes
+from lossy_clone.memory.episodic import (
+    get_episodes_by_session,
+    init_episodic,
+    save_episodes,
+    search_episodic,
+)
 
 
 @pytest.fixture
@@ -90,3 +95,108 @@ def test_save_episodes_with_empty_list_saves_nothing(conn):
 
     assert rows == []
     assert get_episodes_by_session(conn, session_id="s1") == []
+
+
+def test_search_episodic_matches_by_topic(conn):
+    save_episodes(
+        conn,
+        session_id="s1",
+        episodes=[{"topic": "decorators", "strengths": [], "weaknesses": [], "questions": []}],
+    )
+
+    results = search_episodic(conn, query="decorators 궁금해요")
+
+    assert len(results) == 1
+    assert results[0]["topic"] == "decorators"
+
+
+def test_search_episodic_matches_by_questions_field(conn):
+    save_episodes(
+        conn,
+        session_id="s1",
+        episodes=[
+            {
+                "topic": "erasers",
+                "strengths": [],
+                "weaknesses": [],
+                "questions": ["흑연은 지우개로 지워지는데 왜 볼펜은 지워지지 않나요"],
+            }
+        ],
+    )
+
+    results = search_episodic(conn, query="볼펜 지우개로 지워지나요")
+
+    assert len(results) == 1
+    assert results[0]["topic"] == "erasers"
+
+
+def test_search_episodic_matches_by_strengths_and_weaknesses(conn):
+    save_episodes(
+        conn,
+        session_id="s1",
+        episodes=[
+            {
+                "topic": "recursion",
+                "strengths": ["base case 이해함"],
+                "weaknesses": ["재귀 깊이 계산에 약함"],
+                "questions": [],
+            }
+        ],
+    )
+
+    results = search_episodic(conn, query="재귀 깊이 계산 어려워요")
+
+    assert len(results) == 1
+    assert results[0]["topic"] == "recursion"
+
+
+def test_search_episodic_returns_empty_list_when_no_overlap(conn):
+    save_episodes(
+        conn,
+        session_id="s1",
+        episodes=[{"topic": "decorators", "strengths": [], "weaknesses": [], "questions": []}],
+    )
+
+    results = search_episodic(conn, query="완전히 무관한 요리 레시피")
+
+    assert results == []
+
+
+def test_search_episodic_ranks_higher_overlap_first(conn):
+    save_episodes(
+        conn,
+        session_id="s1",
+        episodes=[
+            {"topic": "python decorators functools", "strengths": [], "weaknesses": [], "questions": []},
+            {"topic": "python", "strengths": [], "weaknesses": [], "questions": []},
+        ],
+    )
+
+    results = search_episodic(conn, query="python decorators functools")
+
+    assert results[0]["topic"] == "python decorators functools"
+
+
+def test_search_episodic_respects_limit(conn):
+    save_episodes(
+        conn,
+        session_id="s1",
+        episodes=[
+            {"topic": f"python topic {i}", "strengths": [], "weaknesses": [], "questions": []}
+            for i in range(5)
+        ],
+    )
+
+    results = search_episodic(conn, query="python", limit=2)
+
+    assert len(results) == 2
+
+
+def test_search_episodic_works_on_uninitialized_connection():
+    connection = sqlite3.connect(":memory:")
+    connection.row_factory = sqlite3.Row
+
+    results = search_episodic(connection, query="anything")
+
+    assert results == []
+    connection.close()

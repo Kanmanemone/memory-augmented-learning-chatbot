@@ -1,0 +1,32 @@
+{
+  "project": "lossy_clone",
+  "phase": "4-retrieval",
+  "steps": [
+    {
+      "step": 0,
+      "name": "retrieval-functions",
+      "status": "completed",
+      "summary": "docs/ADR.md에 ADR-010 추가. lossy_clone/memory/ltm.py에 search_ltm(conn, query, limit=3)->list[dict], episodic.py에 search_episodic(conn, query, limit=3)->list[dict] 추가. 둘 다 init_x(conn) 먼저 호출(빈 DB 대응), session_id 제한 없이 소문자 토큰 집합 오버랩으로 스코어링, 동점이면 최신 우선, 겹침 0인 row는 제외."
+    },
+    {
+      "step": 1,
+      "name": "chat-context-assembly",
+      "status": "completed",
+      "summary": "lossy_clone/chatbot.py에 순수 함수 build_memory_context(ltm_hits, episodic_hits) -> Optional[str] 추가. 둘 다 비어있으면 None, 아니면 과거 요약/주제/질문/강점/약점을 텍스트로 조립하고 '관련 있으면 참고하라'는 지시를 포함. DB/LLM 의존 없음."
+    },
+    {
+      "step": 2,
+      "name": "chat-integration",
+      "status": "completed",
+      "summary": "docs/ADR.md에 ADR-011 추가(step 0에서 함께 작성됨). Chatbot.chat()이 매 턴 search_ltm+search_episodic(query=현재 메시지) 호출 후 build_memory_context로 조립, 결과가 있으면 role=\"system\"으로 STM 이력 앞에 prepend. 컨텍스트 없으면 기존과 동일 동작(기존 4개 chat() 테스트 무수정 통과로 회귀 없음 확인). 실제 Gemini API로 LTM 컨텍스트가 응답에 자연스럽게 반영되는 것까지 수동 확인."
+    },
+    {
+      "step": 3,
+      "name": "docs-sync-phase4",
+      "status": "completed",
+      "summary": "docs/ARCHITECTURE.md: chat() 흐름에 검색/컨텍스트 주입 반영, 디렉토리 구조/상태 관리 갱신. lossy_clone/README.md: 상태 표 4단계 완료(로드맵 전체 완료), 코드 사용 예시에 검색 자동 참고 문구 추가. lossy_clone/ARCHITECTURE.md: '4단계 — 검색/통합 (예정)'을 실제 mermaid sequenceDiagram + ADR-010/011 근거 불릿으로 교체, mermaid 렌더링을 Artifact로 재확인."
+    }
+  ],
+  "created_at": "2026-07-16T09:00:00+0900",
+  "completed_at": "2026-07-16T10:00:00+0900"
+}

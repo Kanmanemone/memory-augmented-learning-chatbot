@@ -8,30 +8,33 @@
 lossy_clone/
 ├── README.md              # 실행 방법
 ├── requirements.txt        # 최소 의존성
-├── chatbot.py              # 1단계: Chatbot 클래스, chat() / 2단계: end_session() / 3단계: end_session() 내부 episodic 추출
+├── chatbot.py              # 1단계: Chatbot 클래스, chat() / 2단계: end_session() / 3단계: end_session() 내부 episodic 추출 / 4단계: chat() 내부 검색+컨텍스트 주입
 ├── memory/
 │   ├── stm.py               # 1단계: 세션 내 최근 메시지 저장/조회
-│   ├── ltm.py                # 2단계: 세션 요약 저장/조회
-│   └── episodic.py           # 3단계: 주제별 강점/약점/질문 저장/조회
+│   ├── ltm.py                # 2단계: 세션 요약 저장/조회 / 4단계: search_ltm 추가
+│   └── episodic.py           # 3단계: 주제별 강점/약점/질문 저장/조회 / 4단계: search_episodic 추가
 └── data/                    # 로컬 저장소 (SQLite 등), 실행 시 생성
 ```
 
-파일은 필요해지는 단계에서만 추가한다. 4단계 이후 필요한 파일은 그때 결정한다.
+파일은 필요해지는 단계에서만 추가한다. 4단계는 새 파일 없이 기존 `chatbot.py`/`ltm.py`/`episodic.py`를 확장하는 것으로 끝났다 — `docs/PRD.md` 로드맵은 이 4단계로 끝난다.
 
 ## 패턴
 원본의 "3계층 메모리(STM/LTM/Episodic)"라는 개념 구분은 그대로 따라가지만, 각 계층은 독립된 최소 구현으로 단계마다 새로 짠다. 계층 간 결합은 원본처럼 촘촘한 상호 참조(트레이스, 통합 컨텍스트 병합 등)를 그대로 옮기지 않고, 각 단계에서 필요한 최소한의 연결만 만든다.
 
-## 데이터 흐름 (1단계)
+## 데이터 흐름 (1단계 + 4단계)
 ```
 사용자 입력
   → Chatbot.chat(message)
   → STM에 사용자 메시지 저장
+  → search_ltm(conn, query=message), search_episodic(conn, query=message) (4단계)
+  → build_memory_context(ltm_hits, episodic_hits) — 매치 없으면 None (4단계)
   → STM에서 최근 대화 이력 읽기
+  → 컨텍스트가 있으면 role="system"으로 이력 맨 앞에 붙임 (4단계)
   → 응답 생성 (LLM 호출)
   → STM에 응답 저장
   → 응답 반환
 ```
-4단계가 추가되면 "응답 생성 시 LTM/Episodic 조회" 단계가 순서대로 끼워진다.
+검색·컨텍스트 주입(4단계)은 처음부터 1단계 흐름에 끼워지는 것이 아니라 그 사이에 추가된 것이라, 위 다이어그램은 두 단계를 합쳐서 보여준다. 자세한 이유는 `lossy_clone/ARCHITECTURE.md`의 4단계 섹션 참고.
 
 ## 데이터 흐름 (2단계)
 ```
@@ -59,4 +62,4 @@ LTM 요약 호출이 실패하면 이 흐름 자체가 시도되지 않는다(�
 ## 상태 관리
 - 세션 내 대화 상태(STM)는 로컬 SQLite 파일(`lossy_clone/data/` 아래)에 저장한다. 원본과 동일하게 파일 기반으로 가고, 필드 이름과 구성도 기본적으로 원본을 따르되 이름이 좋지 않은 필드만 바꾼다.
 - 세션 요약(LTM)은 2단계부터, 주제별 강점/약점/질문(Episodic)은 3단계부터 같은 SQLite 파일의 `ltm`/`episodic` 테이블에 각각 저장된다.
-- Chroma 같은 벡터 DB는 아직 없다. `docs/PRD.md` MVP 제외 사항에 따라 4단계에서 필요해지면 그때 도입 여부를 결정한다.
+- Chroma 같은 벡터 DB는 쓰지 않는다. 4단계의 `search_ltm`/`search_episodic`도 임베딩 없이 키워드 토큰 오버랩만 사용한다 — `docs/ADR.md` ADR-010.

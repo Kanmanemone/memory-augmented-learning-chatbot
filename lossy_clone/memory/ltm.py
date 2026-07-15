@@ -56,3 +56,28 @@ def get_summaries_by_session(conn: sqlite3.Connection, session_id: str) -> list[
     ).fetchall()
 
     return [dict(row) for row in rows]
+
+
+def search_ltm(conn: sqlite3.Connection, query: str, limit: int = 3) -> list[dict]:
+    """query와 토큰이 겹치는 summary를 가진 row를 겹침 개수 내림차순(동점이면 최신 우선)으로
+    최대 limit개 반환한다. session_id로 범위를 제한하지 않는다 (ADR-010).
+    """
+    init_ltm(conn)
+
+    query_tokens = set(query.lower().split())
+    if not query_tokens:
+        return []
+
+    rows = conn.execute(
+        "SELECT id, session_id, summary, created_at FROM ltm ORDER BY created_at DESC"
+    ).fetchall()
+
+    scored = []
+    for row in rows:
+        summary_tokens = set(row["summary"].lower().split())
+        score = len(query_tokens & summary_tokens)
+        if score > 0:
+            scored.append((score, dict(row)))
+
+    scored.sort(key=lambda pair: pair[0], reverse=True)
+    return [row for _score, row in scored[:limit]]

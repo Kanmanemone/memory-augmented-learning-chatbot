@@ -2,7 +2,7 @@ import sqlite3
 
 import pytest
 
-from lossy_clone.memory.ltm import get_summaries_by_session, init_ltm, save_summary
+from lossy_clone.memory.ltm import get_summaries_by_session, init_ltm, save_summary, search_ltm
 
 
 @pytest.fixture
@@ -48,3 +48,49 @@ def test_get_summaries_by_session_is_isolated_per_session(conn):
     s1_summaries = get_summaries_by_session(conn, session_id="s1")
 
     assert [s["summary"] for s in s1_summaries] == ["s1의 요약"]
+
+
+def test_search_ltm_finds_summary_with_overlapping_tokens(conn):
+    save_summary(conn, session_id="s1", summary="사용자는 python decorators 개념을 질문했다")
+    save_summary(conn, session_id="s2", summary="사용자는 recursion base case를 질문했다")
+
+    results = search_ltm(conn, query="python decorators 궁금해요")
+
+    assert len(results) == 1
+    assert "decorators" in results[0]["summary"]
+
+
+def test_search_ltm_returns_empty_list_when_no_overlap(conn):
+    save_summary(conn, session_id="s1", summary="사용자는 python decorators 개념을 질문했다")
+
+    results = search_ltm(conn, query="완전히 무관한 요리 레시피")
+
+    assert results == []
+
+
+def test_search_ltm_ranks_higher_overlap_first(conn):
+    save_summary(conn, session_id="s1", summary="python decorators functools wraps")
+    save_summary(conn, session_id="s2", summary="python decorators")
+
+    results = search_ltm(conn, query="python decorators functools wraps")
+
+    assert results[0]["summary"] == "python decorators functools wraps"
+
+
+def test_search_ltm_respects_limit(conn):
+    for i in range(5):
+        save_summary(conn, session_id=f"s{i}", summary=f"python topic-{i}")
+
+    results = search_ltm(conn, query="python", limit=2)
+
+    assert len(results) == 2
+
+
+def test_search_ltm_works_on_uninitialized_connection():
+    connection = sqlite3.connect(":memory:")
+    connection.row_factory = sqlite3.Row
+
+    results = search_ltm(connection, query="anything")
+
+    assert results == []
+    connection.close()

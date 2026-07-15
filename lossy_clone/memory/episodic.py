@@ -87,3 +87,40 @@ def get_episodes_by_session(conn: sqlite3.Connection, session_id: str) -> list[d
         episodes.append(episode)
 
     return episodes
+
+
+def _searchable_text(episode: dict) -> str:
+    parts = [episode["topic"], *episode["strengths"], *episode["weaknesses"], *episode["questions"]]
+    return " ".join(parts).lower()
+
+
+def search_episodic(conn: sqlite3.Connection, query: str, limit: int = 3) -> list[dict]:
+    """query와 topic/strengths/weaknesses/questions를 합친 텍스트의 토큰이 겹치는 row를
+    겹침 개수 내림차순(동점이면 최신 우선)으로 최대 limit개 반환한다. session_id로 범위를
+    제한하지 않는다 (ADR-010).
+    """
+    init_episodic(conn)
+
+    query_tokens = set(query.lower().split())
+    if not query_tokens:
+        return []
+
+    rows = conn.execute(
+        "SELECT id, session_id, topic, strengths, weaknesses, questions, created_at "
+        "FROM episodic ORDER BY created_at DESC"
+    ).fetchall()
+
+    scored = []
+    for row in rows:
+        episode = dict(row)
+        episode["strengths"] = json.loads(episode["strengths"])
+        episode["weaknesses"] = json.loads(episode["weaknesses"])
+        episode["questions"] = json.loads(episode["questions"])
+
+        target_tokens = set(_searchable_text(episode).split())
+        score = len(query_tokens & target_tokens)
+        if score > 0:
+            scored.append((score, episode))
+
+    scored.sort(key=lambda pair: pair[0], reverse=True)
+    return [episode for _score, episode in scored[:limit]]
