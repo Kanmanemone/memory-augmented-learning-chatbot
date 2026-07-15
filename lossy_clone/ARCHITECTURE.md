@@ -46,6 +46,7 @@ sequenceDiagram
     Bot-->>User: "사용자는 Python 데코레이터와 functools.wraps에 대해 질문함"
 ```
 
+- **`DB as SQLite (stm_messages / ltm)`의 `/`는 "또는"(둘 다 해당) 표시다**: `stm_messages`와 `ltm`은 같은 SQLite 파일(`lossy_clone/data/chatbot.db`) 안의 서로 다른 테이블이지만, 물리적으로 하나의 DB이므로 다이어그램에 테이블마다 따로 그리지 않고 `DB` 하나로 합쳐서 표시했다. 위 다이어그램에서 첫 번째 `SELECT`는 `stm_messages`를 조회하고, `INSERT INTO ltm`은 `ltm`에 쓴다 — 같은 `DB`가 두 테이블을 번갈아 오갈 뿐이다.
 - **`end_session()`은 `chat()`과 트리거 시점이 다르다**: `chat()`은 매 턴 호출되지만 `end_session()`은 호출자가 세션을 끝내고 싶을 때 명시적으로 부른다. 원본의 exit-keyword 감지·`max_turns`·`inactivity_timeout` 같은 자동 판단은 없다 — `docs/ADR.md` ADR-006.
 - **왜 `limit=None`으로 전체 이력을 다시 읽는가**: `chat()`의 대화 컨텍스트(`history_limit`, 기본 20개)와 요약 대상은 서로 다른 개념이다. 세션이 20턴을 넘으면 `chat()`은 최근 20개만 LLM에 보내지만, `end_session()`은 세션 전체를 요약해야 하므로 별도로 전체 조회가 필요하다.
 - **STM 이력이 비어 있으면 아무 것도 하지 않는다**: `history`가 빈 리스트면 LLM을 호출하지 않고 `None`을 반환한다. 빈 대화를 요약시키는 것은 의미가 없고, 불필요한 LLM 호출 비용도 아낀다.
