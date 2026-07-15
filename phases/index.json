@@ -4,6 +4,10 @@
       "dir": "1-chatbot-stm",
       "status": "completed",
       "completed_at": "2026-07-13T12:37:21+0900"
+    },
+    {
+      "dir": "2-ltm",
+      "status": "pending"
     }
   ]
 }

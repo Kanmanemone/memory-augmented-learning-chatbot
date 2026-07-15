@@ -1,0 +1,11 @@
+{
+  "project": "lossy_clone",
+  "phase": "2-ltm",
+  "steps": [
+    { "step": 0, "name": "ltm-schema", "status": "pending" },
+    { "step": 1, "name": "stm-full-history", "status": "pending" },
+    { "step": 2, "name": "chatbot-end-session", "status": "pending" },
+    { "step": 3, "name": "cli-end-session-wiring", "status": "pending" },
+    { "step": 4, "name": "docs-sync-phase2", "status": "pending" }
+  ]
+}
