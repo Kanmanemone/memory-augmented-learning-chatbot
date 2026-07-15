@@ -20,7 +20,8 @@
       "extensions": [
         "ms-ceintl.vscode-language-pack-ko",
         "ms-python.python",
-        "ms-python.vscode-pylance"
+        "ms-python.vscode-pylance",
+        "qwtel.sqlite-viewer"
       ]
     }
   },
