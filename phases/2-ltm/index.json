@@ -20,7 +20,12 @@
       "status": "completed",
       "summary": "docs/ADR.md에 ADR-006 추가. Chatbot.end_session()->Optional[str] 추가: get_recent_messages(limit=None)으로 STM 전체를 읽고 system 지시 메시지를 덧붙여 LLM 호출, 응답을 memory.ltm.save_summary로 저장 후 반환. 빈 세션이면 None. 지시 메시지는 STM에 저장되지 않음. 중복 호출 시 LTM row가 계속 쌓이는 것은 의도된 동작(ADR-006)."
     },
-    { "step": 3, "name": "cli-end-session-wiring", "status": "pending" },
+    {
+      "step": 3,
+      "name": "cli-end-session-wiring",
+      "status": "completed",
+      "summary": "lossy_clone/__main__.py: while 루프를 빠져나온 직후(exit/quit, EOF, KeyboardInterrupt 세 경로 공통 지점) bot.end_session()을 한 번 호출. try/except로 감싸 실패 시 'bot> (세션 요약 저장 실패: ...)' 출력 후 정상 종료, 성공+요약 있으면 'bot> (세션 요약 저장됨: ...)' 출력, 요약 없으면(빈 세션) 아무 출력 없음."
+    },
     { "step": 4, "name": "docs-sync-phase2", "status": "pending" }
   ]
 }
