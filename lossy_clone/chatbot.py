@@ -72,6 +72,7 @@ def _parse_episodes(raw_text: str) -> list:
         )
     return episodes
 
+
 _PACKAGE_DIR = Path(__file__).resolve().parent
 _DEFAULT_DB_PATH = _PACKAGE_DIR / "data" / "chatbot.db"
 
