@@ -32,6 +32,14 @@ def main(llm_client: Optional[LLMClient] = None, db_path: Optional[Union[str, Pa
         reply = bot.chat(message)
         print(f"bot> {reply}")
 
+    try:
+        summary = bot.end_session()
+    except Exception as exc:
+        print(f"bot> (세션 요약 저장 실패: {exc})")
+    else:
+        if summary is not None:
+            print(f"bot> (세션 요약 저장됨: {summary})")
+
 
 if __name__ == "__main__":
     main()

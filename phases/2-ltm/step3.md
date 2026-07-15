@@ -32,7 +32,7 @@
 - `FakeLLMClient(response="...")`를 주입하고 입력을 `["hello", "exit"]`로 monkeypatch한 뒤 `main(...)`을 호출하면, 종료 후 `capsys`로 캡처한 출력에 요약 저장 관련 문구가 포함되어 있는지 (예: `end_session()`이 실제로 호출되어 응답을 출력했는지).
 - 대화 없이 바로 `exit`만 입력했을 때(`["exit"]`)는 `end_session()`이 `None`을 반환하므로 요약 관련 출력이 없어야 한다는 케이스도 추가한다.
 - `EOFError` 종료 경로(`test_main_stops_on_eof`처럼 `input`이 `EOFError`를 던지는 케이스)에서도 예외 없이 종료되는지 기존 테스트가 계속 통과하는지 확인한다.
-- `end_session()`이 예외를 던지는 상황(예: 응답 대신 예외를 던지는 콜러블을 주입한 `FakeLLMClient`)에서도 `main(...)`이 예외 없이 정상 종료되고, 실패를 알리는 한 줄이 출력되는지. **주의**: 입력을 `["exit"]`만으로 구성해라 (`"hello"` 같은 일반 대화를 섞으면 `chat()` 호출에서도 같은 콜러블이 예외를 던져 `end_session()` 실패 시나리오와 섞인다 — `chat()`은 이 테스트의 관심사가 아니다).
+- `end_session()`이 예외를 던지는 상황에서도 `main(...)`이 예외 없이 정상 종료되고, 실패를 알리는 한 줄이 출력되는지. **주의**: 입력을 `["exit"]`만으로 구성하면 STM이 비어 `end_session()`이 `generate()`를 아예 호출하지 않고 `None`을 반환해버려 실패 시나리오 자체가 발생하지 않는다 — 반드시 `["hello", "exit"]`처럼 대화를 한 번 넣어 STM을 채운 뒤, `FakeLLMClient`에 주입하는 콜러블이 `messages`에 `role="system"` 메시지가 있을 때만 예외를 던지도록 만들어라 (그래야 일반 `chat()` 호출은 성공하고 `end_session()`의 요약 호출만 실패한다).
 
 ## Acceptance Criteria
 
