@@ -14,7 +14,12 @@
       "status": "completed",
       "summary": "lossy_clone/memory/stm.py의 get_recent_messages(conn, session_id, limit: Optional[int] = 20) 확장: limit=None이면 LIMIT 없이 turn_index ASC로 세션 전체 반환, 정수 limit은 기존 동작(DESC LIMIT N 후 reversed) 그대로 유지."
     },
-    { "step": 2, "name": "chatbot-end-session", "status": "pending" },
+    {
+      "step": 2,
+      "name": "chatbot-end-session",
+      "status": "completed",
+      "summary": "docs/ADR.md에 ADR-006 추가. Chatbot.end_session()->Optional[str] 추가: get_recent_messages(limit=None)으로 STM 전체를 읽고 system 지시 메시지를 덧붙여 LLM 호출, 응답을 memory.ltm.save_summary로 저장 후 반환. 빈 세션이면 None. 지시 메시지는 STM에 저장되지 않음. 중복 호출 시 LTM row가 계속 쌓이는 것은 의도된 동작(ADR-006)."
+    },
     { "step": 3, "name": "cli-end-session-wiring", "status": "pending" },
     { "step": 4, "name": "docs-sync-phase2", "status": "pending" }
   ]
