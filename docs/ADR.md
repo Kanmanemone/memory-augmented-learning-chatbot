@@ -39,3 +39,8 @@ lossy_clone은 원본을 그대로 베끼는 것이 아니라, 개념과 전체 
 **결정**: Episodic은 `topic`/`strengths`/`weaknesses`/`questions`만 담는 append-only 테이블로 시작한다. 원본의 taxonomy(9개 카테고리 enum), confidence score, 임베딩+Chroma, `SequenceMatcher` 기반 반복 감지(repeat-detection), source_message_ids/turn_indices/timestamps 추적, `occurrence_count` 같은 필드/로직은 넣지 않는다. 같은 `topic`이 여러 세션에 걸쳐 반복돼도 기존 레코드에 병합(upsert)하지 않고, 매번 새 row로 쌓는다.
 **이유**: `PRD.md` MVP 제외 사항에 "반복 질문 감지", "Chroma 등 벡터 DB, 임베딩 검색"이 명시적으로 4단계 스코프로 빠져 있다. LTM(`ltm` 테이블, ADR-005/006)도 같은 이유로 병합 없이 append-only로 설계했으므로 Episodic도 같은 패턴을 따른다.
 **트레이드오프**: 같은 주제를 여러 세션에서 반복 학습해도 "누적된 하나의 학습 이력"으로 합쳐 보여줄 수 없고, 세션별로 흩어진 row들을 나중에(4단계) 조회/집계해야 한다.
+
+### ADR-008: LTM 요약과 Episodic 추출은 별도 LLM 호출로 분리하고, Episodic 실패는 격리한다
+**결정**: LTM 요약과 Episodic 추출(topic/strengths/weaknesses/questions)은 하나로 합치지 않고 별도의 `generate()` 호출로 수행한다. 두 호출은 순서가 고정되어 있다 — LTM 요약 호출이 먼저이고, 그 호출이 예외를 던지면 Episodic 추출은 시도하지 않고 예외를 그대로 전파한다. 반대로 Episodic 추출 호출이 실패(예외, 또는 파싱 불가능한 응답)해도 이미 계산된 LTM 요약의 저장과 반환에는 영향을 주지 않는다 — 조용히 건너뛴다.
+**이유**: 관심사 분리 — 요약은 자유 형식 텍스트, Episodic 추출은 구조화된 JSON이라 프롬프트 성격이 다르다. 실패 격리 — Episodic 추출(구조화 출력이라 LLM이 형식을 못 지킬 위험이 더 큼)이 흔들려도 이미 검증된 2단계 기능(LTM 요약)을 깨뜨리면 안 된다.
+**트레이드오프**: `end_session()` 한 번 호출에 LLM API 호출이 최대 2번 필요해 지연 시간과 비용이 늘어난다. 세션당 여러 주제를 허용하므로(리스트), 응답 계약은 `{"topics": [{"topic": str, "strengths": [str, ...], "weaknesses": [str, ...], "questions": [str, ...]}, ...]}` 형태이며 주제가 없으면 `{"topics": []}`를 기대한다.

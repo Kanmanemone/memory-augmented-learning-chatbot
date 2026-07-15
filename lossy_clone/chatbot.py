@@ -4,18 +4,73 @@
 -> 응답 생성 (LLM 호출) -> STM에 응답 저장 -> 응답 반환
 """
 
+import json
 import sqlite3
 import uuid
 from pathlib import Path
 from typing import Optional, Union
 
 from lossy_clone.llm import GeminiLLMClient, LLMClient
+from lossy_clone.memory.episodic import init_episodic, save_episodes
 from lossy_clone.memory.ltm import init_ltm, save_summary
 from lossy_clone.memory.stm import add_message, get_recent_messages, init_stm
 
 _SUMMARY_INSTRUCTION = (
     "다음은 사용자와 나눈 대화 전체 기록이다. 이 대화의 핵심 내용을 한국어로 간단히 요약하라."
 )
+
+_EPISODIC_INSTRUCTION = (
+    "다음은 사용자와 나눈 대화 전체 기록이다. 이 대화에서 다룬 학습 주제를 찾아, "
+    "주제별로 사용자가 잘한 점(strengths)/어려워한 점(weaknesses)/질문(questions)을 뽑아라. "
+    '코드펜스나 설명 없이 순수 JSON 객체만 출력하라. 형식: '
+    '{"topics": [{"topic": "...", "strengths": ["..."], "weaknesses": ["..."], "questions": ["..."]}]}. '
+    '다룰 주제가 없으면 {"topics": []}를 출력하라.'
+)
+
+
+def _strip_code_fence(text: str) -> str:
+    """```json ... ``` 또는 ``` ... ``` 코드펜스를 벗겨낸다."""
+    stripped = text.strip()
+    if not stripped.startswith("```"):
+        return stripped
+
+    lines = stripped.split("\n")
+    lines = lines[1:]  # 여는 펜스(```json 또는 ```) 줄 제거
+    if lines and lines[-1].strip() == "```":
+        lines = lines[:-1]
+    return "\n".join(lines).strip()
+
+
+def _parse_episodes(raw_text: str) -> list:
+    """LLM 응답에서 topics 배열을 파싱한다. 형식이 안 맞으면 빈 리스트를 반환한다."""
+    try:
+        payload = json.loads(_strip_code_fence(raw_text))
+    except (json.JSONDecodeError, TypeError):
+        return []
+
+    if not isinstance(payload, dict):
+        return []
+
+    raw_topics = payload.get("topics")
+    if not isinstance(raw_topics, list):
+        return []
+
+    episodes = []
+    for item in raw_topics:
+        if not isinstance(item, dict):
+            continue
+        topic = str(item.get("topic", "")).strip()
+        if not topic:
+            continue
+        episodes.append(
+            {
+                "topic": topic,
+                "strengths": item.get("strengths") if isinstance(item.get("strengths"), list) else [],
+                "weaknesses": item.get("weaknesses") if isinstance(item.get("weaknesses"), list) else [],
+                "questions": item.get("questions") if isinstance(item.get("questions"), list) else [],
+            }
+        )
+    return episodes
 
 _PACKAGE_DIR = Path(__file__).resolve().parent
 _DEFAULT_DB_PATH = _PACKAGE_DIR / "data" / "chatbot.db"
@@ -62,13 +117,29 @@ class Chatbot:
             if not history:
                 return None
 
-            llm_messages = [{"role": "system", "content": _SUMMARY_INSTRUCTION}]
-            llm_messages += [{"role": row["role"], "content": row["content"]} for row in history]
+            history_messages = [{"role": row["role"], "content": row["content"]} for row in history]
 
-            summary = self._llm_client.generate(llm_messages)
+            summary_messages = [{"role": "system", "content": _SUMMARY_INSTRUCTION}] + history_messages
+            summary = self._llm_client.generate(summary_messages)
 
             init_ltm(conn)
             save_summary(conn, session_id=self.session_id, summary=summary)
+
+            self._extract_and_save_episodes(conn, history_messages)
+
             return summary
         finally:
             conn.close()
+
+    def _extract_and_save_episodes(self, conn: sqlite3.Connection, history_messages: list) -> None:
+        init_episodic(conn)
+
+        episodic_messages = [{"role": "system", "content": _EPISODIC_INSTRUCTION}] + history_messages
+        try:
+            raw_response = self._llm_client.generate(episodic_messages)
+            episodes = _parse_episodes(raw_response)
+        except Exception:
+            return
+
+        if episodes:
+            save_episodes(conn, session_id=self.session_id, episodes=episodes)
