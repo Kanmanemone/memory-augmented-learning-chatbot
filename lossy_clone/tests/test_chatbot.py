@@ -101,13 +101,17 @@ def test_end_session_summarizes_full_history_with_instruction_message(tmp_path):
     assert "second message" in summarize_contents
     # STM 전체(user/assistant 4개)에 요약 지시 메시지가 최소 1개 더 포함되어야 한다.
     assert len(summarize_call) > 4
+    # 지시 메시지는 이력 뒤에 role="user"로 붙어 마지막 turn이어야 한다 (마지막이 model로
+    # 끝나면 Gemini가 빈 응답을 반환할 수 있다 — docs/ADR.md ADR-009).
+    assert summarize_call[-1]["role"] == "user"
 
     episodic_call = fake.received_calls[3]
     episodic_contents = [m["content"] for m in episodic_call]
     assert "first message" in episodic_contents
     assert "second message" in episodic_contents
+    assert episodic_call[-1]["role"] == "user"
     # 요약 호출과 episodic 호출의 지시 메시지는 서로 달라야 한다 (구분 가능해야 함).
-    assert summarize_call[0]["content"] != episodic_call[0]["content"]
+    assert summarize_call[-1]["content"] != episodic_call[-1]["content"]
 
 
 def test_end_session_does_not_leak_instruction_message_into_stm(tmp_path):
@@ -147,15 +151,16 @@ def test_end_session_persists_summary_to_ltm_table(tmp_path):
 
 
 def _make_episodic_fake(episodic_response, summary_response="요약"):
-    """summary_response는 LTM 요약 지시(system 메시지에 'topics'가 없음)에,
-    episodic_response는 episodic 추출 지시(system 메시지에 'topics'가 있음)에 응답한다.
+    """마지막 메시지 내용으로 호출 종류를 구분한다: episodic 지시엔 'topics'가,
+    요약 지시엔 '요약'이 포함되어 있고, 일반 chat() 메시지는 둘 다 포함하지 않는다
+    (지시 메시지는 이력 뒤에 role="user"로 붙으므로 role만으로는 구분할 수 없다).
     둘 다 콜러블이면 messages를 인자로 호출한다."""
 
     def _generate(messages):
-        instruction = messages[0]["content"] if messages and messages[0]["role"] == "system" else ""
-        if "topics" in instruction:
+        last_content = messages[-1]["content"] if messages else ""
+        if "topics" in last_content:
             return episodic_response(messages) if callable(episodic_response) else episodic_response
-        if messages and messages[0]["role"] == "system":
+        if "요약" in last_content:
             return summary_response(messages) if callable(summary_response) else summary_response
         return "ok"
 
@@ -301,8 +306,8 @@ def test_end_session_skips_episodic_call_when_summary_call_fails(tmp_path):
     db_path = tmp_path / "test.db"
 
     def raise_summary(messages):
-        instruction = messages[0]["content"] if messages and messages[0]["role"] == "system" else ""
-        if "topics" not in instruction and messages and messages[0]["role"] == "system":
+        last_content = messages[-1]["content"] if messages else ""
+        if "요약" in last_content:
             raise RuntimeError("Gemini API 호출 실패: status=500")
         return "ok"
 

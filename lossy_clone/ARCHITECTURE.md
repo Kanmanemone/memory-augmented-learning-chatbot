@@ -40,7 +40,7 @@ sequenceDiagram
     User->>Bot: end_session()
     Bot->>DB: SELECT ... WHERE session_id=? ORDER BY turn_index ASC (limit=None)
     DB-->>Bot: 세션 전체 이력 [(user, "decorators?"), (assistant, "Decorators let you wrap..."), ...]
-    Bot->>Gemini: generate(messages=[{role:"system", content:"다음은 사용자와 나눈 대화 전체 기록이다..."}, ...전체 이력])
+    Bot->>Gemini: generate(messages=[...전체 이력, {role:"user", content:"위 대화의 핵심 내용을 한국어로 간단히 요약하라"}])
     Gemini-->>Bot: "사용자는 Python 데코레이터와 functools.wraps에 대해 질문함"
     Bot->>DB: INSERT INTO ltm (id, session_id, summary, created_at)
     Note over Bot: 3단계가 없다면 여기서 바로 User에게 반환한다.<br/>3단계가 추가된 뒤로는 아래 3단계 흐름이 끝난 뒤에 반환된다.
@@ -51,7 +51,7 @@ sequenceDiagram
 - **이 다이어그램은 `end_session()`이 User에게 반환하는 지점을 보여주지 않는다**: `end_session()`은 함수 전체가 끝난 뒤 딱 한 번만 반환한다. 3단계가 추가되기 전에는 `INSERT INTO ltm` 직후가 곧 반환 지점이었지만, 3단계가 그 뒤에 이어지므로 실제 반환은 아래 3단계 다이어그램의 마지막 화살표에서 일어난다 — 두 다이어그램은 같은 한 번의 함수 호출을 앞/뒤로 나눠 보여주는 것이지, 두 번 반환하는 게 아니다.
 - **왜 `limit=None`으로 전체 이력을 다시 읽는가**: `chat()`의 대화 컨텍스트(`history_limit`, 기본 20개)와 요약 대상은 서로 다른 개념이다. 세션이 20턴을 넘으면 `chat()`은 최근 20개만 LLM에 보내지만, `end_session()`은 세션 전체를 요약해야 하므로 별도로 전체 조회가 필요하다.
 - **STM 이력이 비어 있으면 아무 것도 하지 않는다**: `history`가 빈 리스트면 LLM을 호출하지 않고 `None`을 반환한다. 빈 대화를 요약시키는 것은 의미가 없고, 불필요한 LLM 호출 비용도 아낀다.
-- **요약 지시 메시지(`role="system"`)는 STM에 저장되지 않는다**: `chat()`이 저장하는 실제 대화 기록이 아니라 이번 `generate()` 호출에만 쓰이는 일회성 지시이기 때문에, `add_message()`로 `stm_messages`에 남기지 않는다.
+- **요약 지시 메시지는 STM 이력 뒤에 `role="user"`로 붙는다**: 이력 앞에 `role="system"`으로 붙이지 않는 이유는 `docs/ADR.md` ADR-009 참고 — STM 이력은 항상 `(user, assistant)` 쌍으로 끝나므로, 지시를 `systemInstruction`으로만 보내면 Gemini에 전달되는 `contents`의 마지막 turn이 `model`로 끝나버려 빈 응답이 돌아올 수 있다. 이 지시 메시지는 `chat()`이 저장하는 실제 대화 기록이 아니라 이번 `generate()` 호출에만 쓰이는 일회성 지시이므로 `add_message()`로 `stm_messages`에 남기지 않는다.
 - **LTM엔 `summary` 하나만 담는다**: 원본의 `struggles`/`strengths`/`confusions`/`topic_tags`/`embedding`은 넣지 않는다. 강점/약점/혼란 누적은 3단계(Episodic memory)의 몫이다 — `docs/ADR.md` ADR-005.
 - **`end_session()`을 여러 번 호출하면 LTM에 요약이 중복으로 쌓인다**: STM은 지우지 않으므로 다시 호출하면 같은 이력을 또 요약해 새 row를 만든다. 이를 막는 상태 추적은 의도적으로 만들지 않았다 — `docs/ADR.md` ADR-006.
 
@@ -67,7 +67,7 @@ sequenceDiagram
     participant Gemini as Gemini API
 
     Note over Bot,DB: 2단계: LTM 요약 저장까지 끝난 직후, 같은 end_session() 호출 안에서 바로 이어짐 (User에게는 아직 반환 전)
-    Bot->>Gemini: generate(messages=[{role:"system", content:"...topics 배열로 답하라..."}, ...전체 이력])
+    Bot->>Gemini: generate(messages=[...전체 이력, {role:"user", content:"...topics 배열로 답하라..."}])
     Gemini-->>Bot: 응답 텍스트(마크다운 코드펜스로 감싸인 topics 배열 JSON)
     Bot->>Bot: 코드펜스 제거 후 json.loads (실패하면 여기서 조용히 중단, LTM 결과엔 영향 없음)
     Bot->>DB: INSERT INTO episodic (id, session_id, topic, strengths, weaknesses, questions, created_at)
@@ -77,6 +77,7 @@ sequenceDiagram
 - **이 다이어그램은 2단계 다이어그램의 연속이다, 별도 호출이 아니다**: 위 두 다이어그램을 합쳐야 `end_session()` 한 번 호출의 전체 그림이 된다. `Bot-->>User` 반환 화살표가 이 다이어그램에만 있는 이유는, 2단계 코드만 있을 때는 `INSERT INTO ltm` 직후가 반환 지점이었지만 3단계가 그 사이에 끼어들면서 반환 지점이 여기로 밀렸기 때문이다 — 2단계 다이어그램의 `Note`를 참고.
 - **`DB` 레인에 `episodic`이 추가됐다**: 2단계 섹션에서 설명한 것과 같은 이유로, `stm_messages`/`ltm`/`episodic` 모두 같은 SQLite 파일 안의 서로 다른 테이블이라 다이어그램에서 `DB` 하나로 합쳐 표시한다.
 - **LTM 요약과 별도의 `generate()` 호출이다**: 한 응답에 "요약 텍스트"와 "주제별 topics 배열"을 함께 요청하지 않는다. 요약은 자유 형식 텍스트인 반면 topics 배열은 위에서 설명한 구조화된 JSON이라 프롬프트 성격이 달라서 분리했다 — `docs/ADR.md` ADR-008.
+- **이 지시 메시지도 STM 이력 뒤에 `role="user"`로 붙는다**: 2단계와 같은 이유다 — `docs/ADR.md` ADR-009.
 - **순서가 고정되어 있다**: LTM 요약 호출(2단계)이 먼저이고, 그 호출이 실패하면 이 흐름(Episodic 추출) 자체가 시도되지 않는다. 반대로 이 흐름이 실패해도(예외, JSON 파싱 실패) 이미 저장된 LTM 요약에는 영향을 주지 않고 조용히 건너뛴다 — ADR-008.
 - **코드펜스 제거가 필요한 이유**: 실제 Gemini는 "JSON만 출력하라"고 지시해도 응답을 마크다운 코드펜스(json 코드블록)로 감싸서 반환하는 경우가 흔하다. `GeminiLLMClient`는 JSON 강제 옵션(`response_mime_type` 등)을 쓰지 않으므로, `json.loads()` 이전에 코드펜스를 벗겨내는 전처리가 없으면 실제 API에서는 매번 파싱에 실패해 아무것도 저장되지 않는다.
 - **`topic`이 빈 문자열인 항목은 저장하지 않는다**: LLM이 형식은 맞췄지만 내용이 빈 항목을 만들 수 있어서, 저장 직전에 걸러낸다. `strengths`/`weaknesses`/`questions`가 없거나 리스트가 아니면 빈 리스트로 취급한다.

@@ -39,16 +39,16 @@ lossy_clone/
   → Chatbot.end_session()
   → STM에서 세션 전체 이력 읽기 (get_recent_messages(limit=None))
   → 이력이 비어 있으면 종료 (LLM 호출/저장 없이 None 반환)
-  → 요약 지시 메시지(role="system") + STM 이력을 LLM에 전달 (LLMClient.generate(...))
+  → STM 이력 뒤에 요약 지시 메시지(role="user")를 덧붙여 LLM에 전달 (LLMClient.generate(...))
   → 응답을 LTM에 저장 (memory.ltm.save_summary(...))
   → 요약 텍스트 반환
 ```
-`end_session()`은 `chat()`과 달리 매 턴이 아니라 세션이 끝날 때 한 번(또는 호출자가 원할 때마다) 실행된다. 요약 지시 메시지는 LLM 호출에만 쓰이고 STM에는 저장되지 않는다.
+`end_session()`은 `chat()`과 달리 매 턴이 아니라 세션이 끝날 때 한 번(또는 호출자가 원할 때마다) 실행된다. 요약 지시 메시지는 LLM 호출에만 쓰이고 STM에는 저장되지 않는다. 지시 메시지를 이력 **뒤에** `role="user"`로 붙이는 이유는 `docs/ADR.md` ADR-009 참고 — 이력 앞에 `role="system"`으로만 붙이면 Gemini에 보내는 마지막 turn이 `model`로 끝나 빈 응답이 돌아올 수 있다.
 
 ## 데이터 흐름 (3단계)
 ```
 (2단계의 LTM 저장까지 끝난 뒤, 같은 end_session() 호출 안에서 이어짐)
-  → 별도의 episodic 지시 메시지(role="system") + STM 이력을 LLM에 전달 (LLMClient.generate(...))
+  → STM 이력 뒤에 별도의 episodic 지시 메시지(role="user")를 덧붙여 LLM에 전달 (LLMClient.generate(...))
   → 응답에서 코드펜스 제거 후 JSON 파싱 ({"topics": [...]} 형태 기대)
   → topic이 빈 문자열인 항목 제외, 유효한 항목만 Episodic에 저장 (memory.episodic.save_episodes(...))
   → (실패 시) 예외/파싱 실패는 조용히 무시 — 이미 저장된 LTM 요약에는 영향 없음

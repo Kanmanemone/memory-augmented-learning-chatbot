@@ -15,12 +15,10 @@ from lossy_clone.memory.episodic import init_episodic, save_episodes
 from lossy_clone.memory.ltm import init_ltm, save_summary
 from lossy_clone.memory.stm import add_message, get_recent_messages, init_stm
 
-_SUMMARY_INSTRUCTION = (
-    "다음은 사용자와 나눈 대화 전체 기록이다. 이 대화의 핵심 내용을 한국어로 간단히 요약하라."
-)
+_SUMMARY_INSTRUCTION = "위 대화의 핵심 내용을 한국어로 간단히 요약하라."
 
 _EPISODIC_INSTRUCTION = (
-    "다음은 사용자와 나눈 대화 전체 기록이다. 이 대화에서 다룬 학습 주제를 찾아, "
+    "위 대화에서 다룬 학습 주제를 찾아, "
     "주제별로 사용자가 잘한 점(strengths)/어려워한 점(weaknesses)/질문(questions)을 뽑아라. "
     '코드펜스나 설명 없이 순수 JSON 객체만 출력하라. 형식: '
     '{"topics": [{"topic": "...", "strengths": ["..."], "weaknesses": ["..."], "questions": ["..."]}]}. '
@@ -120,7 +118,12 @@ class Chatbot:
 
             history_messages = [{"role": row["role"], "content": row["content"]} for row in history]
 
-            summary_messages = [{"role": "system", "content": _SUMMARY_INSTRUCTION}] + history_messages
+            # 지시 메시지는 이력 뒤에 role="user"로 덧붙인다 — STM 이력은 항상 (user, assistant)
+            # 쌍으로 끝나므로, 지시를 앞쪽 role="system"으로만 넣으면 Gemini에 보내는 마지막
+            # turn이 여전히 "model"로 끝난다. Gemini는 마지막 turn이 이미 model이면 "더
+            # 이어 말할 필요 없음"으로 판단해 빈 응답(출력 토큰 0개)을 반환할 수 있다
+            # (docs/ADR.md ADR-009). 마지막 turn을 user로 만들어야 실제로 응답을 생성한다.
+            summary_messages = history_messages + [{"role": "user", "content": _SUMMARY_INSTRUCTION}]
             summary = self._llm_client.generate(summary_messages)
 
             init_ltm(conn)
@@ -135,7 +138,7 @@ class Chatbot:
     def _extract_and_save_episodes(self, conn: sqlite3.Connection, history_messages: list) -> None:
         init_episodic(conn)
 
-        episodic_messages = [{"role": "system", "content": _EPISODIC_INSTRUCTION}] + history_messages
+        episodic_messages = history_messages + [{"role": "user", "content": _EPISODIC_INSTRUCTION}]
         try:
             raw_response = self._llm_client.generate(episodic_messages)
             episodes = _parse_episodes(raw_response)

@@ -44,3 +44,8 @@ lossy_clone은 원본을 그대로 베끼는 것이 아니라, 개념과 전체 
 **결정**: LTM 요약과 Episodic 추출(topic/strengths/weaknesses/questions)은 하나로 합치지 않고 별도의 `generate()` 호출로 수행한다. 두 호출은 순서가 고정되어 있다 — LTM 요약 호출이 먼저이고, 그 호출이 예외를 던지면 Episodic 추출은 시도하지 않고 예외를 그대로 전파한다. 반대로 Episodic 추출 호출이 실패(예외, 또는 파싱 불가능한 응답)해도 이미 계산된 LTM 요약의 저장과 반환에는 영향을 주지 않는다 — 조용히 건너뛴다.
 **이유**: 관심사 분리 — 요약은 자유 형식 텍스트, Episodic 추출은 구조화된 JSON이라 프롬프트 성격이 다르다. 실패 격리 — Episodic 추출(구조화 출력이라 LLM이 형식을 못 지킬 위험이 더 큼)이 흔들려도 이미 검증된 2단계 기능(LTM 요약)을 깨뜨리면 안 된다.
 **트레이드오프**: `end_session()` 한 번 호출에 LLM API 호출이 최대 2번 필요해 지연 시간과 비용이 늘어난다. 세션당 여러 주제를 허용하므로(리스트), 응답 계약은 `{"topics": [{"topic": str, "strengths": [str, ...], "weaknesses": [str, ...], "questions": [str, ...]}, ...]}` 형태이며 주제가 없으면 `{"topics": []}`를 기대한다.
+
+### ADR-009: LLM에 보내는 messages는 항상 마지막 turn이 user여야 한다
+**결정**: `LLMClient.generate()`에 넘기는 `messages`는 항상 마지막 원소의 `role`이 `"user"`여야 한다. `end_session()`의 요약/Episodic 추출 지시는 STM 이력 앞에 `role="system"`으로 붙이지 않고, STM 이력 **뒤에** `role="user"`로 덧붙인다.
+**이유**: 실제 Gemini API로 검증하던 중 `end_session()`의 LTM 요약 호출이 `finishReason: "STOP"`과 함께 빈 응답(`parts` 없음, 출력 토큰 0개)을 반환하는 문제가 발생했다. 원인은 STM 이력이 항상 `(user, assistant)` 쌍으로 끝난다는 데 있다 — 지시를 `role="system"`으로 이력 앞에만 붙이면 `llm.py`의 `_build_payload`가 system 메시지를 `contents`가 아니라 `systemInstruction`으로 따로 빼버리므로, 실제 Gemini에 보내는 `contents`의 마지막 turn이 여전히 `model`로 끝난다. Gemini는 마지막 turn이 이미 `model`이면 "더 이어 말할 필요 없음"으로 판단해 빈 응답을 반환할 수 있다. `chat()`은 방금 저장한 사용자 메시지가 항상 마지막이라 이 문제가 없었지만, `end_session()`만 이 함정에 걸렸다.
+**트레이드오프**: `FakeLLMClient` 기반 테스트만으로는 이런 종류의 결함이 드러나지 않는다(가짜 응답은 항상 성공하므로) — 실제 API로 최소 한 번은 수동 검증해야 잡을 수 있다. 이후 STM 이력을 사용하는 LLM 호출을 새로 추가할 때는 항상 마지막 turn이 user인지 확인해야 한다.
