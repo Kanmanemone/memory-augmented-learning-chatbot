@@ -7,6 +7,7 @@ sqlite3.Connection을 그대로 사용한다.
 import sqlite3
 import uuid
 from datetime import datetime, timezone
+from typing import Optional
 
 _VALID_ROLES = ("user", "assistant", "system")
 
@@ -62,8 +63,22 @@ def add_message(conn: sqlite3.Connection, session_id: str, role: str, content: s
     return row
 
 
-def get_recent_messages(conn: sqlite3.Connection, session_id: str, limit: int = 20) -> list[dict]:
-    """해당 session_id의 최근 메시지를 turn_index 오름차순(대화 순서)으로 최대 limit개 반환한다."""
+def get_recent_messages(
+    conn: sqlite3.Connection, session_id: str, limit: Optional[int] = 20
+) -> list[dict]:
+    """해당 session_id의 메시지를 turn_index 오름차순(대화 순서)으로 반환한다.
+
+    limit이 정수면 최근 limit개만, None이면 세션 전체 이력을 반환한다.
+    """
+    if limit is None:
+        rows = conn.execute(
+            "SELECT id, session_id, role, content, timestamp, turn_index "
+            "FROM stm_messages WHERE session_id = ? "
+            "ORDER BY turn_index ASC",
+            (session_id,),
+        ).fetchall()
+        return [dict(row) for row in rows]
+
     rows = conn.execute(
         "SELECT id, session_id, role, content, timestamp, turn_index "
         "FROM stm_messages WHERE session_id = ? "

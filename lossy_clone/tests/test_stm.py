@@ -80,3 +80,21 @@ def test_get_recent_messages_handles_fewer_messages_than_limit(conn):
 def test_add_message_rejects_invalid_role(conn):
     with pytest.raises(Exception):
         add_message(conn, session_id="s1", role="bogus", content="x")
+
+
+def test_get_recent_messages_with_limit_none_returns_full_history(conn):
+    for i in range(7):
+        add_message(conn, session_id="s1", role="user", content=str(i))
+
+    recent = get_recent_messages(conn, session_id="s1", limit=None)
+
+    assert [m["content"] for m in recent] == [str(i) for i in range(7)]
+
+
+def test_get_recent_messages_with_integer_limit_still_works(conn):
+    for i in range(5):
+        add_message(conn, session_id="s1", role="user", content=str(i))
+
+    recent = get_recent_messages(conn, session_id="s1", limit=2)
+
+    assert [m["content"] for m in recent] == ["3", "4"]
