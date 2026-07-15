@@ -26,6 +26,13 @@
       "status": "completed",
       "summary": "lossy_clone/__main__.py: while 루프를 빠져나온 직후(exit/quit, EOF, KeyboardInterrupt 세 경로 공통 지점) bot.end_session()을 한 번 호출. try/except로 감싸 실패 시 'bot> (세션 요약 저장 실패: ...)' 출력 후 정상 종료, 성공+요약 있으면 'bot> (세션 요약 저장됨: ...)' 출력, 요약 없으면(빈 세션) 아무 출력 없음."
     },
-    { "step": 4, "name": "docs-sync-phase2", "status": "pending" }
-  ]
+    {
+      "step": 4,
+      "name": "docs-sync-phase2",
+      "status": "completed",
+      "summary": "docs/ARCHITECTURE.md: 디렉토리 구조에 memory/ltm.py 반영, '데이터 흐름 (2단계)' 섹션 추가, 상태 관리 섹션 LTM 존재 반영. lossy_clone/README.md: 상태 표 2단계 완료, end_session() 사용 예시, CLI 종료 시 요약 안내. lossy_clone/ARCHITECTURE.md: '2단계 — LTM (예정)'을 실제 mermaid sequenceDiagram + ADR-005/006 근거 불릿으로 교체."
+    }
+  ],
+  "created_at": "2026-07-15T12:00:00+0900",
+  "completed_at": "2026-07-15T13:00:00+0900"
 }
