@@ -6,11 +6,13 @@
 `lossy_clone.` 패키지 경로로 import하므로 그 위험이 없다.
 """
 
+import sqlite3
 from pathlib import Path
 from typing import Optional, Union
 
 from lossy_clone.chatbot import Chatbot
 from lossy_clone.llm import LLMClient
+from lossy_clone.memory.episodic import get_episodes_by_session
 
 _EXIT_COMMANDS = {"exit", "quit"}
 
@@ -35,10 +37,20 @@ def main(llm_client: Optional[LLMClient] = None, db_path: Optional[Union[str, Pa
     try:
         summary = bot.end_session()
     except Exception as exc:
-        print(f"bot> (세션 요약 저장 실패: {exc})")
+        print(f"bot> 세션 요약(LTM) 저장 실패: {exc}")
     else:
         if summary is not None:
-            print(f"bot> (세션 요약 저장됨: {summary})")
+            print(f"bot> 세션 요약(LTM) 저장됨: {summary}")
+
+            conn = sqlite3.connect(bot.db_path)
+            conn.row_factory = sqlite3.Row
+            try:
+                episodes = get_episodes_by_session(conn, session_id=bot.session_id)
+            finally:
+                conn.close()
+            if episodes:
+                topics = ", ".join(episode["topic"] for episode in episodes)
+                print(f"bot> 학습 이력을 Episodic DB에 저장: {topics}")
 
 
 if __name__ == "__main__":

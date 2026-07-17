@@ -32,10 +32,11 @@ lossy_clone chatbot — 'exit' 또는 'quit'로 종료합니다.
 you> Can you explain Python decorators?
 bot> (Gemini가 생성한 답변)
 you> exit
-bot> (세션 요약 저장됨: Gemini가 생성한 요약)
+bot> 세션 요약(LTM) 저장됨: Gemini가 생성한 요약
+bot> 학습 이력을 Episodic DB에 저장: decorators
 ```
 
-`exit`/`quit` 입력 또는 Ctrl+D(EOF)로 종료합니다. 주고받은 메시지는 `lossy_clone/data/chatbot.db`의 STM에 쌓이고, 같은 세션의 다음 턴 컨텍스트로 재사용됩니다. 매 턴 과거 LTM/Episodic 중 지금 질문과 관련 있는 내용도 자동으로 찾아 답변에 참고합니다(조용히, CLI 출력 없이). CLI가 종료될 때 세션 전체 대화가 요약되어 같은 파일의 LTM(`ltm` 테이블)에 저장되고, 성공하면 `bot> (세션 요약 저장됨: ...)`이 출력됩니다. 같은 시점에 세션에서 다룬 주제별 강점/약점/질문도 Episodic(`episodic` 테이블)에 조용히(CLI 출력 없이) 저장됩니다.
+`exit`/`quit` 입력 또는 Ctrl+D(EOF)로 종료합니다. 주고받은 메시지는 `lossy_clone/data/chatbot.db`의 STM에 쌓이고, 같은 세션의 다음 턴 컨텍스트로 재사용됩니다. 매 턴 과거 LTM/Episodic 중 지금 질문과 관련 있는 내용도 자동으로 찾아 답변에 참고합니다(조용히, CLI 출력 없이). CLI가 종료될 때 세션 전체 대화가 요약되어 같은 파일의 LTM(`ltm` 테이블)에 저장되고, 성공하면 `bot> 세션 요약(LTM) 저장됨: ...`이 출력됩니다. 같은 시점에 세션에서 다룬 주제별 강점/약점/질문도 Episodic(`episodic` 테이블)에 저장되고, 주제가 하나 이상 추출됐으면 `bot> 학습 이력을 Episodic DB에 저장: ...`이 출력됩니다(추출된 주제가 없으면 출력 없이 조용히 넘어갑니다).
 
 ## 코드에서 사용
 

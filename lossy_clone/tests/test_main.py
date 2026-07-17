@@ -51,6 +51,43 @@ def test_main_prints_nothing_about_summary_when_exiting_without_conversation(mon
     assert "세션 요약" not in captured.out
 
 
+def test_main_prints_episodic_save_after_conversation(monkeypatch, capsys, tmp_path):
+    inputs = iter(["hello", "exit"])
+    monkeypatch.setattr("builtins.input", lambda *_: next(inputs))
+
+    def fake_generate(messages):
+        last_content = messages[-1]["content"] if messages else ""
+        if "topics" in last_content:
+            return '{"topics": [{"topic": "decorators", "strengths": [], "weaknesses": [], "questions": []}]}'
+        if "요약" in last_content:
+            return "정상 요약"
+        return "ok"
+
+    main(llm_client=FakeLLMClient(response=fake_generate), db_path=tmp_path / "test.db")
+
+    captured = capsys.readouterr()
+    assert "학습 이력" in captured.out
+    assert "decorators" in captured.out
+
+
+def test_main_prints_nothing_about_episodic_when_no_topics_extracted(monkeypatch, capsys, tmp_path):
+    inputs = iter(["hello", "exit"])
+    monkeypatch.setattr("builtins.input", lambda *_: next(inputs))
+
+    def fake_generate(messages):
+        last_content = messages[-1]["content"] if messages else ""
+        if "topics" in last_content:
+            return '{"topics": []}'
+        if "요약" in last_content:
+            return "정상 요약"
+        return "ok"
+
+    main(llm_client=FakeLLMClient(response=fake_generate), db_path=tmp_path / "test.db")
+
+    captured = capsys.readouterr()
+    assert "학습 이력" not in captured.out
+
+
 def test_main_survives_end_session_failure_and_prints_failure_message(monkeypatch, capsys, tmp_path):
     # end_session()이 비어있지 않은 STM을 요약하려면 대화가 최소 한 번은 있어야 한다.
     # 일반 chat()은 성공시키고 end_session()의 요약 호출(마지막 메시지에 요약 지시가 붙음)만
