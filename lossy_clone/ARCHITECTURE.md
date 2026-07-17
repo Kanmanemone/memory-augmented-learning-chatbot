@@ -53,7 +53,7 @@ sequenceDiagram
 - **STM 이력이 비어 있으면 아무 것도 하지 않는다**: `history`가 빈 리스트면 LLM을 호출하지 않고 `None`을 반환한다. 빈 대화를 요약시키는 것은 의미가 없고, 불필요한 LLM 호출 비용도 아낀다.
 - **요약 지시 메시지는 STM 이력 뒤에 `role="user"`로 붙는다**: 이력 앞에 `role="system"`으로 붙이지 않는 이유는 `docs/ADR.md` ADR-009 참고 — STM 이력은 항상 `(user, assistant)` 쌍으로 끝나므로, 지시를 `systemInstruction`으로만 보내면 Gemini에 전달되는 `contents`의 마지막 turn이 `model`로 끝나버려 빈 응답이 돌아올 수 있다. 이 지시 메시지는 `chat()`이 저장하는 실제 대화 기록이 아니라 이번 `generate()` 호출에만 쓰이는 일회성 지시이므로 `add_message()`로 `stm_messages`에 남기지 않는다.
 - **LTM엔 `summary` 하나만 담는다**: 원본의 `struggles`/`strengths`/`confusions`/`topic_tags`/`embedding`은 넣지 않는다. 강점/약점/혼란 누적은 3단계(Episodic memory)의 몫이다 — `docs/ADR.md` ADR-005.
-- **`end_session()`을 여러 번 호출하면 LTM에 요약이 중복으로 쌓인다**: STM은 지우지 않으므로 다시 호출하면 같은 이력을 또 요약해 새 row를 만든다. 이를 막는 상태 추적은 의도적으로 만들지 않았다 — `docs/ADR.md` ADR-006.
+- **`end_session()`을 여러 번 호출하면 LTM에 요약이 중복으로 쌓인다**: STM은 지우지 않으므로 다시 호출하면 같은 이력을 또 요약해 새 row를 만든다. 이를 막는 상태 추적은 의도적으로 만들지 않았다 — `docs/ADR.md` ADR-006 (이건 같은 세션에서 end_session()을  반복 호출했을 때 얘기고, 세션이 다르면 그 세션의 STM만 요약된다 — 즉, 같은 STM이 무한히 여러 LTM row의 재료로 재사용되는 구조는 아니다).
 
 ## 3단계 — Episodic memory
 
@@ -101,18 +101,20 @@ sequenceDiagram
     DB-->>Bot: ltm_hits (토큰이 겹치는 과거 summary, 없으면 빈 리스트)
     Bot->>DB: search_episodic(query="사인펜도 흑연처럼 지우개로 지워지나요?")
     DB-->>Bot: episodic_hits (토큰이 겹치는 과거 topic/questions, 없으면 빈 리스트)
-    Bot->>Bot: build_memory_context(ltm_hits, episodic_hits) — 둘 다 비어있으면 None
+    Bot->>Bot: memory_context = build_memory_context(ltm_hits, episodic_hits) — 둘 다 비어있으면 None
     Bot->>DB: SELECT ... WHERE session_id=? ORDER BY turn_index DESC LIMIT 20
     DB-->>Bot: 최근 대화 이력
-    Bot->>Gemini: generate(messages=[{role:"system", content:"과거 요약/주제 텍스트"}, ...최근 이력])
+    Bot->>Bot: llm_messages = [{role:"system", content:memory_context}] + 최근 대화 이력 (memory_context가 None이면 최근 대화 이력 그대로)
+    Bot->>Gemini: generate(messages=llm_messages)
     Gemini-->>Bot: "이전 질문에서 흑연과 볼펜 잉크 차이를 다뤘었는데, 사인펜도 그 연장선입니다..."
     Bot->>DB: INSERT (role='assistant', content=..., turn_index=N+1)
     Bot-->>User: "이전 질문에서 흑연과 볼펜 잉크 차이를 다뤘었는데, 사인펜도 그 연장선입니다..."
 ```
 
+- **LTM과 Episodic을 둘 다 검색하는 이유 — 둘은 해상도가 다르다**: LTM은 세션 하나를 통째로 요약한 문장 덩어리라서, 한 세션에서 주제를 여러 개 다뤘으면 그 주제들이 검색 결과에도 다 같이 섞여 나온다. Episodic은 주제 하나당 row 하나씩이라, 지금 질문과 겹치는 주제만 정확히 집힌다. 예를 들어 한 세션에서 decorators/recursion/list comprehension 세 주제를 다뤘다면, `search_ltm(query="recursion base case 다시 설명해줘")`는 세 주제가 뒤섞인 요약 문장("사용자는 decorators, recursion, list comprehension 세 가지를 질문했고...") 전체를 그대로 돌려주지만, `search_episodic(query="recursion base case 다시 설명해줘")`는 `recursion` topic row 하나(`weaknesses=["base case 헷갈림"]`, `questions=["재귀 base case가 뭐야?"]`)만 정확히 돌려준다. 세션 하나에 주제 하나만 있는 짧은 대화에서는 이 차이가 잘 안 보이지만, 세션이 쌓이고 한 세션에 여러 주제가 섞이기 시작하면 LTM 검색은 점점 노이즈 섞인 큰 덩어리만 돌려주고 Episodic 검색은 계속 그 주제만 정확히 돌려준다.
 - **검색은 세션을 넘나든다**: `search_ltm`/`search_episodic`는 `session_id`로 제한하지 않고 전체 `ltm`/`episodic` 테이블에서 찾는다. Episodic/LTM은 애초에 "지금 세션이 끝난 뒤에도 남는 기억"이 목적이라, 지금 세션에 국한하면 존재 의미가 없다.
 - **검색 쿼리는 이번 턴에 사용자가 방금 입력한 메시지 그 자체다**: 누적 STM 이력이 아니라 `message` 파라미터를 그대로 쓴다.
 - **검색은 임베딩 없이 키워드 토큰 겹침만 쓴다**: 쿼리와 저장된 텍스트를 각각 소문자 토큰 집합으로 만들어 교집합 크기로 랭킹한다. Chroma나 벡터 유사도는 쓰지 않는다 — `docs/ADR.md` ADR-010.
-- **컨텍스트는 `role="system"`으로 STM 이력 앞에 붙는다**: `chat()`의 STM 이력은 항상 방금 저장한 사용자 메시지로 끝나므로, system 메시지를 앞에 붙여도 Gemini에 보내는 마지막 turn은 그대로 `user`로 유지된다 — `end_session()`(ADR-009)과 반대로, 여기서는 system을 이력 뒤가 아니라 **앞**에 붙여도 안전하다. 이 컨텍스트 메시지도 STM에는 저장되지 않는다 — `docs/ADR.md` ADR-011.
+- **컨텍스트는 `role="system"`으로 STM 이력 앞에 붙는다**: 2단계에서 설명했듯(`docs/ADR.md` ADR-009), Gemini는 보내는 메시지의 마지막 turn이 `user`가 아니면 빈 응답을 반환할 수 있다. `end_session()`은 이를 피하려고 지시 메시지를 이력 **뒤**에 `role="user"`로 붙였다. 반면 `chat()`은 `add_message(user)`로 이번 메시지를 저장한 직후 이력을 읽으므로 STM 이력의 마지막 원소가 항상 방금 저장한 사용자 메시지다 — 그래서 컨텍스트를 이력 **앞**에 `role="system"`으로 붙여도 마지막 turn은 그대로 `user`로 유지되어 안전하다(`docs/ADR.md` ADR-011). 이 컨텍스트 메시지는 STM에 저장되지 않는다 — 2단계의 요약 지시 메시지와 같은 이유로, 실제 대화 기록이 아니라 이번 `generate()` 호출 한 번에만 쓰이는 일회성 지시이기 때문이다.
 - **매치가 없으면 아무것도 안 붙는다**: `ltm_hits`/`episodic_hits`가 둘 다 비면 `build_memory_context`가 `None`을 반환하고, `chat()`은 4단계 이전과 완전히 동일하게 동작한다 (새 사용자, 무관한 질문의 경우).
 - **반복 질문 감지는 별도 알고리즘이 아니다**: 원본처럼 유사도 임계값을 계산하고 답변에 실제로 반영됐는지 사후 검증하지 않는다. 검색된 Episodic의 과거 `questions`를 컨텍스트에 그대로 노출하고 "관련 있으면 참고해서 답하라"는 지시만 주면, 지금 질문이 과거 질문과 비슷한지는 Gemini 스스로 판단해서 자연어로 언급한다 (위 예시의 "이전 질문에서... 다뤘었는데"가 그 결과다) — `docs/ADR.md` ADR-011.
