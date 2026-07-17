@@ -39,6 +39,18 @@ def _strip_code_fence(text: str) -> str:
     return "\n".join(lines).strip()
 
 
+def _as_str_list(value) -> list:
+    """value가 list면 각 원소를 str로 강제하고, 아니면 빈 리스트를 반환한다.
+
+    ADR-008이 문서화한 응답 계약(strengths/weaknesses/questions는 리스트의
+    각 원소가 str)을 LLM이 항상 지킨다고 보장할 수 없어(예: 숫자가 섞여 옴),
+    topic과 동일하게 이 경계에서 str로 강제한다.
+    """
+    if not isinstance(value, list):
+        return []
+    return [str(v) for v in value]
+
+
 def _parse_episodes(raw_text: str) -> list:
     """LLM 응답에서 topics 배열을 파싱한다. 형식이 안 맞으면 빈 리스트를 반환한다."""
     try:
@@ -63,9 +75,9 @@ def _parse_episodes(raw_text: str) -> list:
         episodes.append(
             {
                 "topic": topic,
-                "strengths": item.get("strengths") if isinstance(item.get("strengths"), list) else [],
-                "weaknesses": item.get("weaknesses") if isinstance(item.get("weaknesses"), list) else [],
-                "questions": item.get("questions") if isinstance(item.get("questions"), list) else [],
+                "strengths": _as_str_list(item.get("strengths")),
+                "weaknesses": _as_str_list(item.get("weaknesses")),
+                "questions": _as_str_list(item.get("questions")),
             }
         )
     return episodes

@@ -329,6 +329,41 @@ def test_end_session_with_malformed_episodic_json_still_saves_summary(tmp_path):
     assert episodic_rows == []
 
 
+def test_end_session_coerces_non_string_episodic_list_items_to_string(tmp_path):
+    db_path = tmp_path / "test.db"
+    episodic_json = (
+        '{"topics": ['
+        '{"topic": "decorators", "strengths": [0.9], "weaknesses": [], "questions": [1]}'
+        ']}'
+    )
+    fake = _make_episodic_fake(episodic_json)
+    bot = Chatbot(llm_client=fake, db_path=db_path, session_id="s1")
+
+    bot.chat("hello")
+    bot.end_session()
+
+    conn = sqlite3.connect(db_path)
+    row = conn.execute(
+        "SELECT strengths, questions FROM episodic WHERE session_id = ?", ("s1",)
+    ).fetchone()
+    conn.close()
+
+    assert json.loads(row[0]) == ["0.9"]
+    assert json.loads(row[1]) == ["1"]
+
+    # search_episodic previously crashed with TypeError on non-string list
+    # items (str.join expects str elements) once such a row existed in the
+    # table, for every future query regardless of relevance.
+    from lossy_clone.memory.episodic import search_episodic
+
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+    results = search_episodic(conn, query="완전히 무관한 질문")
+    conn.close()
+
+    assert results == []
+
+
 def test_end_session_skips_topics_with_empty_topic_field(tmp_path):
     db_path = tmp_path / "test.db"
     episodic_json = (
